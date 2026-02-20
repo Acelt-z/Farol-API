@@ -1,0 +1,8 @@
+# Dependências
+node_modules/
+
+# Pasta de build
+dist/
+
+# Logs
+*.log
