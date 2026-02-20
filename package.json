@@ -1,0 +1,45 @@
+{
+  "name": "farol-api",
+  "version": "1.0.0",
+  "description": "API do ERP do Farol",
+  "main": "dist/index.js",
+  "type": "module",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "build": "tsc",
+    "dev": "tsc && node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Farol-das-Financas/Farol-API.git"
+  },
+  "author": "Farol das Finanças",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Farol-das-Financas/Farol-API/issues"
+  },
+  "homepage": "https://github.com/Farol-das-Financas/Farol-API#readme",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.19.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.0",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "eslint": "^10.0.1",
+    "globals": "^17.3.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.0"
+  }
+}
