@@ -10,16 +10,21 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ) {
+  const now = new Date().toISOString();
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
+    const body = {
       status: err.statusCode,
       error: getErrorCategory({status: err.statusCode}),
       code: err.errorCode,
       message: err.message,
       fields: err.fields,
-      timestamp: new Date().toISOString(),
+      timestamp: now,
       path: req.originalUrl
-    } as ApiErrorResponse);
+    } as ApiErrorResponse;
+
+    logger.error(body);
+
+    return res.status(err.statusCode).json(body);
   }
 
   logger.error(err);
@@ -30,7 +35,7 @@ export function errorHandler(
     code: ErrorCodes.INTERNAL_SERVER_ERROR,
     fields: [],
     message: "An unexpected error occurred",
-    timestamp: new Date().toISOString(),
+    timestamp: now,
     path: req.originalUrl
   } as ApiErrorResponse);
 }

@@ -1,0 +1,29 @@
+// I'll make some adaptations and add required fields that aren't in the conceptual database model.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String @id @default(uuid())
+  // "Name" changed
+  firstName String
+  lastName  String
+
+  email String
+  phone String?
+
+  // CPF added
+  cpf String
+
+  password String
+
+  // Verifications
+  emailVerified Boolean @default(false)
+  phoneVerified Boolean @default(false)
+}

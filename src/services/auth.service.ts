@@ -1,22 +1,15 @@
-// import { AppError } from "../errors/AppError.js"
-// import { ErrorCodes } from "../errors/interfaces/errorCodes.js";
-import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
-import { ValidationError } from "../errors/ValidationError.js";
-
-export async function registerUser() {
+import type { LoginDTO, SignUpDTO } from "../models/auth.js";
+import bcrypt from "bcrypt";
+import { prisma } from "../utils/prisma.js";
 
 
-    const errorFields: ValidationItem[] = [
-        {
-            field: 'C1',
-            errorLabel: 'Erro no C1'
-        }, 
-        {
-            field: 'C2',
-            errorLabel: 'Erro no C2'
-        }
-    ];
+export async function login(_dto: LoginDTO) {
 
-    // throw new AppError({message: 'Mensagem', errorCode: ErrorCodes.INTERNAL_SERVER_ERROR, statusCode: 500});
-    throw new ValidationError(errorFields);
+}
+
+export async function signUp(dto: SignUpDTO) {
+    const saltRounds = process.env.SALT_ROUNDS ? Number(process.env.SALT_ROUNDS) : 6;
+    const hash = await bcrypt.hash(dto.password, saltRounds);
+    const newUser = {...dto, password: hash};
+    return await prisma.user.create({data: newUser});
 }
