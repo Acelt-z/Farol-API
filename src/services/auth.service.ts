@@ -8,7 +8,8 @@ export async function login(_dto: LoginDTO) {
 }
 
 export async function signUp(dto: SignUpDTO) {
-    const hash = await bcrypt.hash(dto.password, process.env.SALT_ROUNDS ?? 6);
+    const saltRounds = process.env.SALT_ROUNDS ? Number(process.env.SALT_ROUNDS) : 6;
+    const hash = await bcrypt.hash(dto.password, saltRounds);
     const newUser = {...dto, password: hash};
     return await prisma.user.create({data: newUser});
 }

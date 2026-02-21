@@ -2,6 +2,7 @@ import {type Request, type Response} from 'express';
 import { login, signUp } from '../services/auth.service.js';
 import { LoginSchema, SignUpSchema } from '../models/auth.js';
 import { getParsedData } from '../utils/utils.js';
+import logger from '../utils/logger.js';
 
 export async function loginController(req: Request, res: Response) {
     const result = LoginSchema.safeParse(req.body);
@@ -13,6 +14,7 @@ export async function loginController(req: Request, res: Response) {
 }
 
 export async function registerController(req: Request, res: Response) {
+    logger.info(req.body);
     const result = SignUpSchema.safeParse(req.body);
     const data = getParsedData(result);
 

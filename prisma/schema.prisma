@@ -21,6 +21,8 @@ model User {
   // CPF added
   cpf String
 
+  password String
+
   // Verifications
   emailVerified Boolean @default(false)
   phoneVerified Boolean @default(false)

@@ -14,14 +14,14 @@ export const SignUpSchema = z.object({
     lastName: z.string(),
     cpf: z.string().min(11, 'Must contain at least 11 characters').refine((c) => isCpf(c)),
     email: z.email(),
-    phone: z.string().startsWith('+').min(8),
+    phone: z.string('Phone is required').startsWith('+').min(8),
 
     password: z.string()
-        .min(8, "Password must be at least 8 characters long")
-        .regex(/[A-Z]/, "Must contain at least one uppercase letter")
-        .regex(/[a-z]/, "Must contain at least one lowercase letter")
-        .regex(/[0-9]/, "Must contain at least one number")
-        .regex(/[^A-Za-z0-9]/, "Must contain at least one special character")
+        .min(8, 'Password must be at least 8 characters long')
+        .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
+        .regex(/[a-z]/, 'Must contain at least one lowercase letter')
+        .regex(/[0-9]/, 'Must contain at least one number')
+        .regex(/[^A-Za-z0-9]/, 'Must contain at least one special character')
 });
 
 export type SignUpDTO = z.infer<typeof SignUpSchema>;
