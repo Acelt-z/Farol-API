@@ -27,7 +27,7 @@ export function errorHandler(
     return res.status(err.statusCode).json(body);
   }
 
-  logger.error(err);
+  logger.error(err.message);
 
   return res.status(500).json({
     status: 500,

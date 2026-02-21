@@ -15,7 +15,7 @@ services:
       - .:/app
       - /app/node_modules
     # command: sh -c "npx prisma migrate deploy && npm run dev" # use it only when is in production
-    command: sh -c "npx prisma generate && npx prisma db push && npm run dev"
+    command: sh -c "npx prisma generate && npx prisma db push --accept-data-loss && npm run dev"
 
   postgres:
     image: postgres:15
