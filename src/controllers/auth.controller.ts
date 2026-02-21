@@ -1,22 +1,11 @@
 import {type Request, type Response} from 'express';
 import { login, signUp } from '../services/auth.service.js';
-import { ValidationError } from '../errors/ValidationError.js';
-import { LoginSchema } from '../models/auth.js';
+import { LoginSchema, SignUpSchema } from '../models/auth.js';
+import { getParsedData } from '../utils/utils.js';
 
 export async function loginController(req: Request, res: Response) {
-
     const result = LoginSchema.safeParse(req.body);
-
-    if (!result.success) {
-        const validationErrors = result.error.issues.map(issue => ({
-            field: issue.path.join('.'),
-            errorLabel: issue.message
-        }));
-
-        throw new ValidationError(validationErrors);
-    }
-
-    const data = result.data;
+    const data = getParsedData(result);
 
     await login(data);
 
@@ -24,19 +13,8 @@ export async function loginController(req: Request, res: Response) {
 }
 
 export async function registerController(req: Request, res: Response) {
-
-    const result = LoginSchema.safeParse(req.body);
-
-    if (!result.success) {
-        const validationErrors = result.error.issues.map(issue => ({
-            field: issue.path.join('.'),
-            errorLabel: issue.message
-        }));
-
-        throw new ValidationError(validationErrors);
-    }
-
-    const data = result.data;
+    const result = SignUpSchema.safeParse(req.body);
+    const data = getParsedData(result);
 
     await signUp(data);
 
