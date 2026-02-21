@@ -1,18 +1,19 @@
-export type CustomError = {
-    errorLabel: string, 
-    errorSlug: string, 
-    statusCode: number
-}
+import type { ErrorCode } from "./interfaces/errorCodes.js";
+import type { CustomError, ValidationItem } from "./interfaces/errorTypes.js";
+
+
 
 export class AppError extends Error {
   public readonly statusCode: number;
-  public readonly errorSlug: string;
+  public readonly errorCode: ErrorCode;
+  public readonly fields?: ValidationItem[] | undefined;
 
-  constructor({ errorLabel, errorSlug, statusCode }: CustomError) {
-    super(errorLabel);
+  constructor({ message, errorCode, statusCode, fields }: CustomError) {
+    super(message);
 
     this.statusCode = statusCode;
-    this.errorSlug = errorSlug;
+    this.errorCode = errorCode;
+    this.fields = fields ?? [];
 
     Object.setPrototypeOf(this, AppError.prototype);
   }
