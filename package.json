@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/Farol-das-Financas/Farol-API#readme",
   "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
     "@types/cors": "^2.8.19",
     "@typescript-eslint/eslint-plugin": "^8.56.0",
     "@typescript-eslint/parser": "^8.56.0",
@@ -31,6 +32,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "prisma": "^7.4.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.19.0",

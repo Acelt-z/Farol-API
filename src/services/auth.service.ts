@@ -1,22 +1,9 @@
-// import { AppError } from "../errors/AppError.js"
-// import { ErrorCodes } from "../errors/interfaces/errorCodes.js";
-import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
-import { ValidationError } from "../errors/ValidationError.js";
+import type { LoginDTO } from "../models/auth.js";
 
-export async function registerUser() {
+export async function login(_dto: LoginDTO) {
 
+}
 
-    const errorFields: ValidationItem[] = [
-        {
-            field: 'C1',
-            errorLabel: 'Erro no C1'
-        }, 
-        {
-            field: 'C2',
-            errorLabel: 'Erro no C2'
-        }
-    ];
+export async function signUp(_dto: LoginDTO) {
 
-    // throw new AppError({message: 'Mensagem', errorCode: ErrorCodes.INTERNAL_SERVER_ERROR, statusCode: 500});
-    throw new ValidationError(errorFields);
 }
