@@ -1,0 +1,131 @@
+import type { LoginDTO, SignUpDTO } from "../models/auth.js";
+import bcrypt from "bcrypt";
+import { ValidationError } from "../errors/ValidationError.js";
+import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
+import type { PrismaClient } from "../generated/prisma/client.js";
+import jwt from "jsonwebtoken";
+import { AppError } from "../errors/AppError.js";
+import { ErrorCodes } from "../errors/interfaces/errorCodes.js";
+import logger from "../utils/logger.js";
+import { getTokenSecrets } from "../utils/utils.js";
+
+export class AuthService {
+  private ACCESS_SECRET: string;
+  private REFRESH_SECRET: string;
+
+  constructor(private prisma: PrismaClient) {
+    const {accessSecret, refreshSecret} = getTokenSecrets();
+
+    this.ACCESS_SECRET = accessSecret;
+    this.REFRESH_SECRET = refreshSecret;
+  }
+
+  private generateTokens(userId: string) {
+    const accessToken = jwt.sign(
+      { sub: userId },
+      this.ACCESS_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+      { sub: userId },
+      this.REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return { accessToken, refreshToken };
+  }
+
+  async signUp(dto: SignUpDTO) {
+    const user = await this.prisma.$transaction(async (tx) => {
+      const [emailExists, cpfExists, phoneExists] = await Promise.all([
+        tx.user.findUnique({ where: { email: dto.email.trim() } }),
+        tx.user.findUnique({ where: { cpf: dto.cpf.trim() } }),
+        tx.user.findUnique({ where: { phone: dto.phone.trim() } })
+      ]);
+
+      const errors: ValidationItem[] = [];
+
+      if (emailExists) {
+        errors.push({ field: "email", errorLabel: "Email already registered" });
+      }
+      if (cpfExists) {
+        errors.push({ field: "cpf", errorLabel: "CPF already registered" });
+      }
+      if (phoneExists) {
+        errors.push({ field: "phone", errorLabel: "Phone already registered" });
+      }
+
+      if (errors.length > 0) throw new ValidationError(errors);
+
+      const saltRounds = process.env.SALT_ROUNDS
+        ? Number(process.env.SALT_ROUNDS)
+        : 10;
+
+      const hash = await bcrypt.hash(dto.password, saltRounds);
+
+      return tx.user.create({
+        data: {
+          firstName: dto.firstName.trim(),
+          lastName: dto.lastName.trim(),
+          email: dto.email.trim(),
+          cpf: dto.cpf.trim(),
+          phone: dto.phone.trim(),
+          password: hash
+        }
+      });
+    });
+
+    return this.generateTokens(user.id);
+  }
+
+  async login(dto: LoginDTO) {
+    const identifier =
+      dto.mode === "cpf" ? dto.cpf : dto.email;
+
+    const where =
+      dto.mode === "cpf"
+        ? { cpf: identifier }
+        : { email: identifier };
+
+    const user = await this.prisma.user.findUnique({ where });
+
+    if (!user) {
+      logger.warn("Login failed");
+      throw new AppError({
+        message: "Invalid credentials",
+        errorCode: ErrorCodes.INVALID_CREDENTIALS,
+        statusCode: 401
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      dto.password,
+      user.password
+    );
+
+    if (!passwordMatches) {
+      throw new AppError({
+        message: "Invalid credentials",
+        errorCode: ErrorCodes.INVALID_CREDENTIALS,
+        statusCode: 401
+      });
+    }
+
+    return this.generateTokens(user.id);
+  }
+
+  generateNewAccessToken(refreshToken: string){
+    const payload = jwt.verify(
+      refreshToken,
+      this.REFRESH_SECRET
+    ) as { sub: string };
+
+    return jwt.sign(
+      { sub: payload.sub },
+      this.ACCESS_SECRET,
+      { expiresIn: "15m" }
+    );
+  }
+}
+
