@@ -3,61 +3,123 @@ import bcrypt from "bcrypt";
 import { ValidationError } from "../errors/ValidationError.js";
 import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
+import jwt from "jsonwebtoken";
+import { AppError } from "../errors/AppError.js";
+import { ErrorCodes } from "../errors/interfaces/errorCodes.js";
+import logger from "../utils/logger.js";
 
 export class AuthService {
+  private ACCESS_SECRET: string;
+  private REFRESH_SECRET: string;
 
-    constructor(private prisma: PrismaClient){};
+  constructor(private prisma: PrismaClient) {
+    const access = process.env.JWT_ACCESS_SECRET;
+    const refresh = process.env.JWT_REFRESH_SECRET;
 
-    async signUp(dto: SignUpDTO) {
-        return await this.prisma.$transaction(async (tx) => {
-            const [emailExists, cpfExists, phoneExists] = await Promise.all([
-                tx.user.findUnique({ where: { email: dto.email.trim() } }),
-                tx.user.findUnique({ where: { cpf: dto.cpf.trim() } }),
-                tx.user.findUnique({ where: { phone: dto.phone.trim() } })
-            ]);
-
-            const errors: ValidationItem[] = [];
-
-            if (emailExists) {
-                errors.push({
-                    field: 'email',
-                    errorLabel: 'This emails is already registered'
-                });
-            }
-            if (cpfExists) {
-                errors.push({
-                    field: 'CPF',
-                    errorLabel: 'This CPF is already registered'
-                });
-            }
-            if (phoneExists) {
-                errors.push({
-                    field: 'phone',
-                    errorLabel: 'This phone is already registered'
-                });
-            }
-
-            if (errors.length > 0) throw new ValidationError(errors);
-
-            const saltRounds = process.env.SALT_ROUNDS ? Number(process.env.SALT_ROUNDS) : 10;
-            const hash = await bcrypt.hash(dto.password, saltRounds);
-
-            const newUser = await tx.user.create({
-                data: {
-                    firstName: dto.firstName.trim(),
-                    lastName: dto.lastName.trim(),
-                    email: dto.email.trim(),
-                    cpf: dto.cpf.trim(),
-                    phone: dto.phone.trim(),
-                    password: hash,
-                },
-            });
-
-            return newUser;
-        });
+    if (!access || !refresh) {
+      throw new AppError({
+        message: "Define JWT secrets in environment variables",
+        errorCode: ErrorCodes.INTERNAL_SERVER_ERROR,
+        statusCode: 500
+      });
     }
-}
 
-export async function login(_dto: LoginDTO) {
+    this.ACCESS_SECRET = access;
+    this.REFRESH_SECRET = refresh;
+  }
 
+  private generateTokens(userId: string) {
+    const accessToken = jwt.sign(
+      { sub: userId },
+      this.ACCESS_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+      { sub: userId },
+      this.REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return { accessToken, refreshToken };
+  }
+
+  async signUp(dto: SignUpDTO) {
+    const user = await this.prisma.$transaction(async (tx) => {
+      const [emailExists, cpfExists, phoneExists] = await Promise.all([
+        tx.user.findUnique({ where: { email: dto.email.trim() } }),
+        tx.user.findUnique({ where: { cpf: dto.cpf.trim() } }),
+        tx.user.findUnique({ where: { phone: dto.phone.trim() } })
+      ]);
+
+      const errors: ValidationItem[] = [];
+
+      if (emailExists) {
+        errors.push({ field: "email", errorLabel: "Email already registered" });
+      }
+      if (cpfExists) {
+        errors.push({ field: "cpf", errorLabel: "CPF already registered" });
+      }
+      if (phoneExists) {
+        errors.push({ field: "phone", errorLabel: "Phone already registered" });
+      }
+
+      if (errors.length > 0) throw new ValidationError(errors);
+
+      const saltRounds = process.env.SALT_ROUNDS
+        ? Number(process.env.SALT_ROUNDS)
+        : 10;
+
+      const hash = await bcrypt.hash(dto.password, saltRounds);
+
+      return tx.user.create({
+        data: {
+          firstName: dto.firstName.trim(),
+          lastName: dto.lastName.trim(),
+          email: dto.email.trim(),
+          cpf: dto.cpf.trim(),
+          phone: dto.phone.trim(),
+          password: hash
+        }
+      });
+    });
+
+    return this.generateTokens(user.id);
+  }
+
+  async login(dto: LoginDTO) {
+    const identifier =
+      dto.mode === "cpf" ? dto.cpf : dto.email;
+
+    const where =
+      dto.mode === "cpf"
+        ? { cpf: identifier }
+        : { email: identifier };
+
+    const user = await this.prisma.user.findUnique({ where });
+
+    if (!user) {
+      logger.warn("Login failed");
+      throw new AppError({
+        message: "Invalid credentials",
+        errorCode: ErrorCodes.INVALID_CREDENTIALS,
+        statusCode: 401
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      dto.password,
+      user.password
+    );
+
+    if (!passwordMatches) {
+      throw new AppError({
+        message: "Invalid credentials",
+        errorCode: ErrorCodes.INVALID_CREDENTIALS,
+        statusCode: 401
+      });
+    }
+
+    return this.generateTokens(user.id);
+  }
 }
