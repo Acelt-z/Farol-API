@@ -3,7 +3,8 @@ export const ErrorCodes = {
   VALIDATION_ERROR: "VALIDATION_ERROR",
   LABEL_REQUIRED: "LABEL_REQUIRED",
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
-  NOT_FOUND: "NOT_FOUND"
+  NOT_FOUND: "NOT_FOUND",
+  UNAUTHORIZED: "UNAUTHORIZED"
 } as const;
 
 export type ErrorCode = keyof typeof ErrorCodes;

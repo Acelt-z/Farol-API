@@ -7,25 +7,17 @@ import jwt from "jsonwebtoken";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCodes } from "../errors/interfaces/errorCodes.js";
 import logger from "../utils/logger.js";
+import { getTokenSecrets } from "../utils/utils.js";
 
 export class AuthService {
   private ACCESS_SECRET: string;
   private REFRESH_SECRET: string;
 
   constructor(private prisma: PrismaClient) {
-    const access = process.env.JWT_ACCESS_SECRET;
-    const refresh = process.env.JWT_REFRESH_SECRET;
+    const {accessSecret, refreshSecret} = getTokenSecrets();
 
-    if (!access || !refresh) {
-      throw new AppError({
-        message: "Define JWT secrets in environment variables",
-        errorCode: ErrorCodes.INTERNAL_SERVER_ERROR,
-        statusCode: 500
-      });
-    }
-
-    this.ACCESS_SECRET = access;
-    this.REFRESH_SECRET = refresh;
+    this.ACCESS_SECRET = accessSecret;
+    this.REFRESH_SECRET = refreshSecret;
   }
 
   private generateTokens(userId: string) {
@@ -122,4 +114,18 @@ export class AuthService {
 
     return this.generateTokens(user.id);
   }
+
+  generateNewAccessToken(refreshToken: string){
+    const payload = jwt.verify(
+      refreshToken,
+      this.REFRESH_SECRET
+    ) as { sub: string };
+
+    return jwt.sign(
+      { sub: payload.sub },
+      this.ACCESS_SECRET,
+      { expiresIn: "15m" }
+    );
+  }
 }
+
