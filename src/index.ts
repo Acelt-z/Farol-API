@@ -4,13 +4,13 @@ import express from "express";
 import http from "http";
 import logger from "./utils/logger.js";
 import PublicRoutes from './routes/public.js';
-import PrivateRoutes from './routes/public.js';
+import PrivateRoutes from './routes/private.js';
 import swaggerUi from "swagger-ui-express";
 
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { config } from "dotenv";
 import { swaggerSpec } from "./utils/swagger.js";
-import { authMiddleware } from './middlewares/authMidlleware.js';
+import { authMiddleware } from './middlewares/authMiddleware.js';
 
 config();
 

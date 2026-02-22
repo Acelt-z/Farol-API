@@ -12,7 +12,7 @@ export function authMiddleware(
   req: Request,
   _res: Response,
   next: NextFunction
-) {
+){
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
