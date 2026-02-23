@@ -6,6 +6,7 @@ import logger from '../utils/logger.js';
 import { prisma } from '../utils/prisma.js';
 import { AppError } from '../errors/AppError.js';
 import { ErrorCodes } from '../errors/interfaces/errorCodes.js';
+import type { AccessTokenResponseDTO, ApiResponse } from '../@types/http.js';
 
 const authService = new AuthService(prisma);
 
@@ -15,6 +16,11 @@ export async function loginController(req: Request, res: Response) {
 
     const { accessToken, refreshToken } = await authService.login(data);
 
+    const body: ApiResponse<AccessTokenResponseDTO> = {
+      success: true,
+      data: {accessToken}
+    };
+
     return res
         .cookie("refresh_token", refreshToken, {
         httpOnly: true,
@@ -22,7 +28,7 @@ export async function loginController(req: Request, res: Response) {
         sameSite: "strict",
         maxAge: 15 * 60 * 1000 // 15 minutes
         })
-        .json({ accessToken });
+        .json({ body });
 }
 
 export async function registerController(req: Request, res: Response) {
@@ -32,6 +38,11 @@ export async function registerController(req: Request, res: Response) {
 
     const { accessToken, refreshToken } = await authService.signUp(data);
 
+    const body: ApiResponse<AccessTokenResponseDTO> = {
+      success: true,
+      data: {accessToken}
+    };
+
     return res
         .cookie("refresh_token", refreshToken, {
         httpOnly: true,
@@ -39,7 +50,7 @@ export async function registerController(req: Request, res: Response) {
         sameSite: "strict",
         maxAge: 15 * 60 * 1000 // 15 minutes
         })
-        .json({ accessToken });
+        .json({ body });
 }
 
 
@@ -58,7 +69,12 @@ export async function refreshController(req: Request, res: Response) {
   try {
     const newAccessToken = authService.generateNewAccessToken(refreshToken);
 
-    return res.status(200).json({ accessToken: newAccessToken });
+    const body: ApiResponse<AccessTokenResponseDTO> = {
+      success: true,
+      data: {accessToken: newAccessToken}
+    };
+
+    return res.status(200).json(body);
   } catch {
     throw new AppError({
       message: "Invalid refresh token",
