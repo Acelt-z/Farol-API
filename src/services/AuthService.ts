@@ -49,9 +49,11 @@ export class AuthService {
       if (emailExists) {
         errors.push({ field: "email", errorLabel: "Email already registered" });
       }
+
       if (cpfExists) {
         errors.push({ field: "cpf", errorLabel: "CPF already registered" });
       }
+      
       if (phoneExists) {
         errors.push({ field: "phone", errorLabel: "Phone already registered" });
       }

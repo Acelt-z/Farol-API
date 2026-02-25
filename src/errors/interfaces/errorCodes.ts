@@ -4,7 +4,8 @@ export const ErrorCodes = {
   LABEL_REQUIRED: "LABEL_REQUIRED",
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
   NOT_FOUND: "NOT_FOUND",
-  UNAUTHORIZED: "UNAUTHORIZED"
+  UNAUTHORIZED: "UNAUTHORIZED",
+  INVALID_INPUT: "INVALID_INPUT",
 } as const;
 
 export type ErrorCode = keyof typeof ErrorCodes;

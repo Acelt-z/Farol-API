@@ -17,6 +17,7 @@ export async function getCurrentUserController(req: Request, res: Response) {
             statusCode: 401
         });
     }
+    
     const user = await userService.getCurrentUser(req.userId);
     const body: ApiResponse<UserResponseDTO> = {
         success: true,
