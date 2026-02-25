@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: farol_app
+    ports:
+      - "${PORT}:${PORT}"
+    depends_on:
+      postgres:
+          condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    # command: sh -c "npx prisma migrate deploy && npm run dev" # use it only when is in production
+    command: sh -c "npx prisma generate && npx prisma db push --accept-data-loss && npm run dev" # use it only when is in dev environment
+
+  postgres:
+    image: postgres:15
+    container_name: farol_postgres
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

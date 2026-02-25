@@ -8,3 +8,4 @@ dist/
 *.log
 
 .env
+/src/generated/prisma
