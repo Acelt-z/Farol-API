@@ -3,6 +3,8 @@ import { ValidationError } from "../errors/ValidationError.js";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCodes } from "../errors/interfaces/errorCodes.js";
 
+export const DEFAULT_TRIAL_DAYS = 7;
+
 export function getParsedData<T>(result: ZodSafeParseResult<T>){
     if (!result.success) {
         const validationErrors = result.error?.issues.map(issue => ({
@@ -35,3 +37,19 @@ export function getTokenSecrets(): Tokens{
 
     return {accessSecret: access, refreshSecret: refresh};
 }
+
+export const addDaysToNow = (days: number): Date => {
+    if (!Number.isInteger(days) || days <= 0) {
+        throw new AppError({
+            message: 'Days must be a positive integer',
+            errorCode: ErrorCodes.INVALID_INPUT,
+            statusCode: 400
+        });
+    }
+
+    const now = new Date();
+    const futureDate = new Date(now);
+    futureDate.setDate(now.getDate() + days);
+
+    return futureDate;
+};
