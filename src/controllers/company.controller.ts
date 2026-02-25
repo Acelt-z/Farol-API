@@ -28,3 +28,21 @@ export async function createCompanyController(req: Request, res: Response) {
         data: company
     });
 }
+
+export async function getUserCompaniesController(req: Request, res: Response) {
+     if (!req.userId) {
+        throw new AppError({
+            message: "Unauthorized",
+            errorCode: ErrorCodes.UNAUTHORIZED,
+            statusCode: 401
+        });
+    }
+
+    
+    const companies = await companyService.getUserCompanies(req.userId);
+    
+    return res.status(201).json({
+        success: true,
+        data: companies
+    });
+}
