@@ -72,4 +72,34 @@ export class CompanyService {
 
         return CompanyMapper.toResponse({company, totalWorkers: 1, userRole: Role.OWNER});
     }
+
+    async getUserCompanies(userId: string): Promise<CompanyResponseDTO[]> {
+        const [userCompanies, totalWorkers] = await this.prisma.$transaction([
+            this.prisma.userCompany.findMany({
+                where: {
+                    userId
+                },
+                include: {
+                    company: {
+                        include: {
+                            owner: true
+                        }
+                    }
+                }
+            }),
+            this.prisma.userCompany.count({
+                where: {
+                    userId
+                }
+            })
+        ]);
+
+        return userCompanies.map((uc) =>
+            CompanyMapper.toResponse({
+                company: uc.company,
+                totalWorkers: totalWorkers,
+                userRole: uc.role
+            })
+        );
+    }
 }

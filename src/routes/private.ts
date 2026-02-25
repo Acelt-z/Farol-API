@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getCurrentUserController } from "../controllers/user.controller.js";
-import { createCompanyController } from "../controllers/company.controller.js";
+import { createCompanyController, getUserCompaniesController } from "../controllers/company.controller.js";
 
 const router = Router();
 
@@ -21,6 +21,10 @@ const router = Router();
  */
 router.get('/me', async (req, res) => {
     await getCurrentUserController(req, res);
+});
+
+router.get('/me/companies', async (req, res) => {
+    await getUserCompaniesController(req, res);
 });
 
 router.post('/company', async (req, res) => {
