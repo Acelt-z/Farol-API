@@ -53,3 +53,14 @@ export const addDaysToNow = (days: number): Date => {
 
     return futureDate;
 };
+
+
+export function assertUserIdxists(userId: string | undefined): asserts userId is string {
+    if (!userId) {
+        throw new AppError({
+            message: "Unauthorized",
+            errorCode: ErrorCodes.UNAUTHORIZED,
+            statusCode: 401
+        });
+    }
+}

@@ -1,7 +1,7 @@
 import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
 import { ValidationError } from "../errors/ValidationError.js";
 import { CompanyStatus, PlanType, Role, type PrismaClient } from "../generated/prisma/client.js";
-import { CompanyMapper, type CompanyResponseDTO, type CreateCompanyDTO } from "../models/company.js";
+import { CompanyMapper, type CompanyCardResponseDTO, type CompanyResponseDTO, type CreateCompanyDTO } from "../models/company.js";
 import { addDaysToNow, DEFAULT_TRIAL_DAYS } from "../utils/utils.js";
 
 export class CompanyService {
@@ -70,7 +70,7 @@ export class CompanyService {
 
         });
 
-        return CompanyMapper.toResponse({company, totalWorkers: 1, userRole: Role.OWNER});
+        return CompanyMapper.toCompleteResponse({company, totalWorkers: 1});
     }
 
     async getUserCompanies(userId: string): Promise<CompanyResponseDTO[]> {
@@ -95,10 +95,38 @@ export class CompanyService {
         ]);
 
         return userCompanies.map((uc) =>
-            CompanyMapper.toResponse({
+            CompanyMapper.toCompleteResponse({
                 company: uc.company,
-                totalWorkers: totalWorkers,
-                userRole: uc.role
+                totalWorkers: totalWorkers
+            })
+        );
+    }
+
+    async getUserCompaniesCard(userId: string): Promise<CompanyCardResponseDTO[]> {
+        const [userCompanies, totalWorkers] = await this.prisma.$transaction([
+            this.prisma.userCompany.findMany({
+                where: {
+                    userId
+                },
+                include: {
+                    company: {
+                        include: {
+                            owner: true
+                        }
+                    }
+                }
+            }),
+            this.prisma.userCompany.count({
+                where: {
+                    userId
+                }
+            })
+        ]);
+
+        return userCompanies.map((uc) =>
+            CompanyMapper.toCardResponse({
+                company: uc.company,
+                totalWorkers: totalWorkers
             })
         );
     }
