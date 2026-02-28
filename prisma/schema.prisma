@@ -11,6 +11,7 @@ datasource db {
 
 enum Role {
   OWNER
+  MANAGER
   MEMBER
 }
 
@@ -77,15 +78,20 @@ model Company {
   // payment validation
   trialEndsAt DateTime?
   status      CompanyStatus @default(TRIAL)
-  plan        Plan          @relation(fields: [planId], references: [id])
+  plan        Plan?         @relation(fields: [planId], references: [id])
 
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   userCompanyRoles UserCompany[]
 
+  parentCompanyId String?
+  parentCompany   Company? @relation("parentCompany", fields: [parentCompanyId], references: [id])
+
   owner   User   @relation(fields: [ownerId], references: [id])
   ownerId String
-  planId  Int
+  planId  Int?
+
+  branchCompanies Company[] @relation("parentCompany")
 }
 
 model UserCompany {

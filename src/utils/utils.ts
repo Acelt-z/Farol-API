@@ -67,3 +67,13 @@ export function assertUserIdxists(userId: string | undefined): asserts userId is
 export function extractDigits(input: string): string {
     return input.replace(/\D/g, '');
 }
+
+export function isBranch(cnpj: string): boolean {
+  const clean = extractDigits(cnpj);
+
+  if (clean.length !== 14) return false;
+
+  const branchCode = clean.substring(8, 12);
+
+  return branchCode !== "0001";
+}

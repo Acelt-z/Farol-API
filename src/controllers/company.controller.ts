@@ -9,7 +9,6 @@ const companyService = new CompanyService(prisma);
 export async function createCompanyController(req: Request, res: Response) {
     assertUserIdxists(req.userId);
 
-
     const result = CreateCompanySchema.safeParse(req.body);
     const data = getParsedData(result);
     
@@ -23,11 +22,10 @@ export async function createCompanyController(req: Request, res: Response) {
 
 export async function getUserCompaniesController(req: Request, res: Response) {
     assertUserIdxists(req.userId);
-
     
     const companies = await companyService.getUserCompanies(req.userId);
     
-    return res.status(201).json({
+    return res.json({
         success: true,
         data: companies
     });
@@ -38,7 +36,7 @@ export async function getUserCompaniesCards(req: Request, res: Response) {
     
     const companies = await companyService.getUserCompaniesCard(req.userId);
     
-    return res.status(200).json({
+    return res.json({
         success: true,
         data: companies
     });

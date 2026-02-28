@@ -6,6 +6,7 @@ export const ErrorCodesHttpStatus = {
   NOT_FOUND: { httpStatus: 404 },
   UNAUTHORIZED: { httpStatus: 401 },
   INVALID_INPUT: { httpStatus: 400 },
+  MISSING_PARAMETERS: {httpStatus: 400}
 } as const;
 
 export const ErrorCode = {
@@ -16,6 +17,7 @@ export const ErrorCode = {
   NOT_FOUND: "NOT_FOUND",
   UNAUTHORIZED: "UNAUTHORIZED",
   INVALID_INPUT: "INVALID_INPUT",
+  MISSING_PARAMETERS: "MISSING_PARAMETERS"
 } as const;
 
 export type ErrorCode = typeof ErrorCode[keyof typeof ErrorCode];
