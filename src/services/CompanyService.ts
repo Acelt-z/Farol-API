@@ -1,6 +1,7 @@
 import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
 import { ValidationError } from "../errors/ValidationError.js";
 import { CompanyStatus, PlanType, Role, type PrismaClient } from "../generated/prisma/client.js";
+import { BranchMapper } from "../models/branchCompany.js";
 import { CompanyMapper, type CompanyCardResponseDTO, type CompanyResponseDTO, type CreateCompanyDTO } from "../models/company.js";
 import { addDaysToNow, DEFAULT_TRIAL_DAYS, extractDigits } from "../utils/utils.js";
 
@@ -74,30 +75,37 @@ export class CompanyService {
     }
 
     async getUserCompanies(userId: string): Promise<CompanyResponseDTO[]> {
-        const [userCompanies, totalWorkers] = await this.prisma.$transaction([
-            this.prisma.userCompany.findMany({
-                where: {
-                    userId
-                },
-                include: {
-                    company: {
-                        include: {
-                            owner: true
+        const userCompanies = await this.prisma.userCompany.findMany({
+            where: { userId },
+            include: {
+                company: {
+                    include: {
+                        owner: true,
+                        branchCompanies: {
+                            include: {
+                                _count: {
+                                    select: { userCompanyRoles: true }
+                                }
+                            }
+                        },
+                        _count: {
+                            select: { userCompanyRoles: true }
                         }
                     }
                 }
-            }),
-            this.prisma.userCompany.count({
-                where: {
-                    userId
-                }
-            })
-        ]);
+            }
+        });
 
         return userCompanies.map((uc) =>
             CompanyMapper.toCompleteResponse({
                 company: uc.company,
-                totalWorkers: totalWorkers
+                totalWorkers: uc.company._count.userCompanyRoles,
+                branches: uc.company.branchCompanies.map((b) =>
+                    BranchMapper.toCompleteResponse({
+                        company: b,
+                        totalWorkers: b._count.userCompanyRoles
+                    })
+                )
             })
         );
     }

@@ -128,7 +128,7 @@ export class AuthService {
     return jwt.sign(
       { sub: payload.sub },
       this.ACCESS_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "15m", issuer: this.ISSUER_SECRET }
     );
   }
 }

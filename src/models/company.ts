@@ -1,6 +1,10 @@
 import { isCnpj } from "validator-brazil";
-import type { Company, CompanyStatus } from "../generated/prisma/client.js";
+import type { CompanyStatus } from "../generated/prisma/client.js";
 import {z } from "zod";
+import { AppError } from "../errors/AppError.js";
+import { ErrorCode } from "../errors/interfaces/errorCodes.js";
+import type { BranchResponseDTO } from "./branchCompany.js";
+import type { ResponseArgs } from "../@types/http.js";
 
 
 export type CompanyResponseDTO = {
@@ -16,7 +20,8 @@ export type CompanyResponseDTO = {
     trialEndsAt?: Date | null;
     status: CompanyStatus;
     planId: number;
-    ownerId?: string;
+    ownerId: string;
+    branches: BranchResponseDTO[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -49,10 +54,15 @@ export const CreateCompanySchema = z.object({
 
 export type CreateCompanyDTO = z.infer<typeof CreateCompanySchema>;
 
-type ResponseArgs = {company: Company, totalWorkers: number};
-
 export class CompanyMapper {
-    static toCompleteResponse({company, totalWorkers}: ResponseArgs): CompanyResponseDTO{
+    static toCompleteResponse({company, totalWorkers, branches}: ResponseArgs): CompanyResponseDTO{
+        if (!company.planId) {
+            throw new AppError({
+                message: "A company must have an associated plan",
+                errorCode: ErrorCode.INTERNAL_SERVER_ERROR
+            });
+        }
+
         return {
             id: company.id,
             name: company.name,
@@ -63,7 +73,8 @@ export class CompanyMapper {
             number: company.number,
             complement: company.complement,
             totalWorkers,
-            trialEndsAt: company.trialEndsAt || null,
+            branches: branches || [],
+            trialEndsAt: company.trialEndsAt,
             status: company.status,
             ownerId: company.ownerId,
             planId: company.planId,
@@ -73,6 +84,13 @@ export class CompanyMapper {
     }
 
     static toCardResponse({company, totalWorkers}: ResponseArgs): CompanyCardResponseDTO{
+        if (!company.planId) {
+            throw new AppError({
+                message: "A company must have an associated plan",
+                errorCode: ErrorCode.INTERNAL_SERVER_ERROR
+            });
+        }
+        
         return {
             id: company.id,
             name: company.name,
@@ -89,3 +107,4 @@ export class CompanyMapper {
         };
     }
 }
+
