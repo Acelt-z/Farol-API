@@ -22,8 +22,8 @@ export const ErrorCode = {
 
 export type ErrorCode = typeof ErrorCode[keyof typeof ErrorCode];
 
-export function getErrorCategory({status, isValidationError}: {status: number, isValidationError?: boolean}): string {
-  if (isValidationError) return 'VALIDATION_ERROR';
+export function getErrorCategory({status, errorType}: {status: number, errorType?: ErrorCode}): string {
+  if (errorType) return errorType;
   if (status >= 400 && status < 500) return "CLIENT_ERROR";
   if (status >= 500) return "SERVER_ERROR";
   return "UNKNOWN_ERROR";

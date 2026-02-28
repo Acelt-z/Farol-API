@@ -2,17 +2,29 @@ import type { ZodSafeParseResult } from "zod";
 import { ValidationError } from "../errors/ValidationError.js";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCode } from "../errors/interfaces/errorCodes.js";
+import { MissingParametersError } from "../errors/MissingParametersErrors.js";
 
 export const DEFAULT_TRIAL_DAYS = 7;
 
-export function getParsedData<T>(result: ZodSafeParseResult<T>){
+export function getParsedData<T>(result: ZodSafeParseResult<T>, errorType: ErrorCode = ErrorCode.VALIDATION_ERROR): T {
     if (!result.success) {
-        const validationErrors = result.error?.issues.map(issue => ({
+        const errors = result.error?.issues.map(issue => ({
             field: issue.path.join('.'),
             errorLabel: issue.message
         }));
+        
+        if (errorType === ErrorCode.VALIDATION_ERROR) {
+            throw new ValidationError(errors);
+        }
 
-        throw new ValidationError(validationErrors);
+        if (errorType === ErrorCode.MISSING_PARAMETERS) {
+            throw new MissingParametersError(errors)
+        }
+
+        throw new AppError({
+            message: "Unknown validation error",
+            errorCode: errorType
+        });
     }
 
     return result.data;
