@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
 import logger from "../utils/logger.js";
-import { ErrorCodes, getErrorCategory } from "../errors/interfaces/errorCodes.js";
+import { ErrorCode, getErrorCategory } from "../errors/interfaces/errorCodes.js";
 import type { ApiErrorResponse, ApiResponse } from "../@types/http.js";
 
 export function errorHandler(
@@ -37,7 +37,7 @@ export function errorHandler(
   const internalError = {
     status: 500,
     error: getErrorCategory({status: 500}),
-    code: ErrorCodes.INTERNAL_SERVER_ERROR,
+    code: ErrorCode.INTERNAL_SERVER_ERROR,
     fields: [],
     message: "An unexpected error occurred",
     timestamp: now,

@@ -10,22 +10,22 @@ export type UserResponseDTO = {
     emailVerified: boolean,
     phoneVerified: boolean,
     createdAt: Date,
-    updatedAt: Date,
+    updatedAt: Date
 }
 
 export class UserMapper {
-    static toResponse(user: User): UserResponseDTO{
+    static toResponse(u: User): UserResponseDTO{
         return {
-            id: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            cpf: user.cpf,
-            phone: user.phone,
-            emailVerified: user.emailVerified,
-            phoneVerified: user.phoneVerified,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt
+            id: u.id,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            email: u.email,
+            cpf: u.cpf,
+            phone: u.phone,
+            emailVerified: u.emailVerified,
+            phoneVerified: u.phoneVerified,
+            createdAt: u.createdAt,
+            updatedAt: u.updatedAt
         };
     }
 }

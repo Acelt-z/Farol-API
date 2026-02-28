@@ -3,6 +3,12 @@ import type { ErrorCode } from "./errorCodes.js";
 export type CustomError = {
   message: string;
   errorCode: ErrorCode;
+  fields?: ValidationItem[];
+};
+
+export type CustomErrorResponse = {
+  message: string;
+  errorCode: ErrorCode;
   statusCode: number;
   fields?: ValidationItem[];
 };

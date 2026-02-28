@@ -1,13 +1,24 @@
-export const ErrorCodes = {
+export const ErrorCodesHttpStatus = {
+  INTERNAL_SERVER_ERROR: { httpStatus: 500 },
+  VALIDATION_ERROR: { httpStatus: 400 },
+  LABEL_REQUIRED: { httpStatus: 400 },
+  INVALID_CREDENTIALS: { httpStatus: 401 },
+  NOT_FOUND: { httpStatus: 404 },
+  UNAUTHORIZED: { httpStatus: 401 },
+  INVALID_INPUT: { httpStatus: 400 },
+} as const;
+
+export const ErrorCode = {
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
   VALIDATION_ERROR: "VALIDATION_ERROR",
   LABEL_REQUIRED: "LABEL_REQUIRED",
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
   NOT_FOUND: "NOT_FOUND",
-  UNAUTHORIZED: "UNAUTHORIZED"
+  UNAUTHORIZED: "UNAUTHORIZED",
+  INVALID_INPUT: "INVALID_INPUT",
 } as const;
 
-export type ErrorCode = keyof typeof ErrorCodes;
+export type ErrorCode = typeof ErrorCode[keyof typeof ErrorCode];
 
 export function getErrorCategory({status, isValidationError}: {status: number, isValidationError?: boolean}): string {
   if (isValidationError) return 'VALIDATION_ERROR';

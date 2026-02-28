@@ -9,6 +9,25 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  OWNER
+  MEMBER
+}
+
+enum CompanyStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELED
+}
+
+enum PlanType {
+  BASIC
+  PRO
+  PREMIUM
+  ENTERPRISE
+}
+
 model User {
   id        String @id @default(uuid())
   // "Name" changed
@@ -28,6 +47,60 @@ model User {
   phoneVerified Boolean @default(false)
 
   // basic additions
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  userCompany UserCompany[]
+  companies   Company[]
+}
+
+model Plan {
+  id           Int       @id @default(autoincrement())
+  name         PlanType  @unique
+  maxUsers     Int?
+  pricePerUser Int
+  companies    Company[]
+}
+
+model Company {
+  id   String @id @default(uuid())
+  name String
+  cnpj String @unique
+
+  // address fields
+  number     Int
+  street     String
+  city       String
+  uf         String
+  zipCode    String
+  complement String?
+
+  // payment validation
+  trialEndsAt DateTime?
+  status      CompanyStatus @default(TRIAL)
+  plan        Plan          @relation(fields: [planId], references: [id])
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  userCompanyRoles UserCompany[]
+
+  owner   User   @relation(fields: [ownerId], references: [id])
+  ownerId String
+  planId  Int
+}
+
+model UserCompany {
+  id             String  @id @default(uuid())
+  companyId      String
+  userId         String
+  isBillableUser Boolean @default(false)
+  role           Role
+
+  company Company @relation(fields: [companyId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([companyId, userId])
+  @@unique([companyId, role, userId])
 }

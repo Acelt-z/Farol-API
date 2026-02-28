@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const LoginSchema = z.discriminatedUnion("mode", [
   z.object({
     mode: z.literal("cpf"),
-    cpf: z.string().min(11).refine((c) => isCpf(c)),
+    cpf: z.string("invalid CPF format").min(11).refine((c) => isCpf(c)),
     password: z.string()
   }),
   z.object({
@@ -20,7 +20,7 @@ export type LoginDTO = z.infer<typeof LoginSchema>;
 export const SignUpSchema = z.object({
     firstName: z.string(),
     lastName: z.string(),
-    cpf: z.string().min(11, 'Must contain at least 11 characters').refine((c) => isCpf(c)),
+    cpf: z.string("Invalid CPF format").min(11, 'Must contain at least 11 characters').refine((c) => isCpf(c)),
     email: z.email(),
     phone: z.string('Phone is required').startsWith('+').min(8),
 

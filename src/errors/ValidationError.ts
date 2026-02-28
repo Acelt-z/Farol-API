@@ -1,5 +1,5 @@
 import { AppError } from "./AppError.js";
-import { ErrorCodes, getErrorCategory } from "./interfaces/errorCodes.js";
+import { ErrorCode, getErrorCategory } from "./interfaces/errorCodes.js";
 import type { ValidationItem } from "./interfaces/errorTypes.js";
 
 export class ValidationError extends AppError {
@@ -8,8 +8,7 @@ export class ValidationError extends AppError {
   constructor(errors: ValidationItem[]) {
     super({
       message: getErrorCategory({status: 400, isValidationError: true}),
-      errorCode: ErrorCodes.VALIDATION_ERROR,
-      statusCode: 400,
+      errorCode: ErrorCode.VALIDATION_ERROR,
       fields: errors
     });
 
