@@ -34,10 +34,13 @@ export function authMiddleware(
   }
 
   try {
-    const {accessSecret} = getTokenSecrets();
+    const {accessSecret, issuerSecret} = getTokenSecrets();
     const payload = jwt.verify(
       token,
-      accessSecret
+      accessSecret,
+      {
+        issuer: issuerSecret,
+      }
     ) as JwtPayload;
 
     req.userId = payload.sub;

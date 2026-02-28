@@ -20,22 +20,24 @@ export function getParsedData<T>(result: ZodSafeParseResult<T>){
 
 type Tokens = {
     accessSecret: string,
-    refreshSecret: string
+    refreshSecret: string,
+    issuerSecret: string
 }
 
 export function getTokenSecrets(): Tokens{
     const access = process.env.JWT_ACCESS_SECRET;
     const refresh = process.env.JWT_REFRESH_SECRET;
+    const issuer = process.env.JWT_ISSUER;
 
-    if (!access || !refresh) {
+    if (!access || !refresh || !issuer) {
         throw new AppError({
-        message: "Define JWT secrets in environment variables",
-        errorCode: ErrorCodes.INTERNAL_SERVER_ERROR,
-        statusCode: 500
+            message: "Define JWT secrets in environment variables",
+            errorCode: ErrorCodes.INTERNAL_SERVER_ERROR,
+            statusCode: 500
         });
     }
 
-    return {accessSecret: access, refreshSecret: refresh};
+    return {accessSecret: access, refreshSecret: refresh, issuerSecret: issuer};
 }
 
 export const addDaysToNow = (days: number): Date => {
