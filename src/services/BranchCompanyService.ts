@@ -1,3 +1,5 @@
+import { AppError } from "../errors/AppError.js";
+import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
 import { ValidationError } from "../errors/ValidationError.js";
 import { CompanyStatus, PrismaClient, Role } from "../generated/prisma/client.js";
@@ -78,9 +80,10 @@ export class BranchCompanyService {
         });
 
         if (!company) {
-            throw new ValidationError([
-            { field: "parentCompanyId", errorLabel: "Parent company not found" }
-            ]);
+            throw new AppError({
+                message: "Parent company not found",
+                errorCode: ErrorCode.NOT_FOUND
+            });
         }
 
         return company;
