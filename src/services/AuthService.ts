@@ -12,25 +12,27 @@ import { getTokenSecrets } from "../utils/utils.js";
 export class AuthService {
   private ACCESS_SECRET: string;
   private REFRESH_SECRET: string;
+  private ISSUER_SECRET: string;
 
   constructor(private prisma: PrismaClient) {
-    const {accessSecret, refreshSecret} = getTokenSecrets();
+    const {accessSecret, refreshSecret, issuerSecret} = getTokenSecrets();
 
     this.ACCESS_SECRET = accessSecret;
     this.REFRESH_SECRET = refreshSecret;
+    this.ISSUER_SECRET = issuerSecret;
   }
 
   private generateTokens(userId: string) {
     const accessToken = jwt.sign(
       { sub: userId },
       this.ACCESS_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "15m", issuer: this.ISSUER_SECRET }
     );
 
     const refreshToken = jwt.sign(
       { sub: userId },
       this.REFRESH_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d", issuer: this.ISSUER_SECRET }
     );
 
     return { accessToken, refreshToken };
