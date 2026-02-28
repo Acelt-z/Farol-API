@@ -5,7 +5,7 @@ import { getParsedData } from '../utils/utils.js';
 import logger from '../utils/logger.js';
 import { prisma } from '../utils/prisma.js';
 import { AppError } from '../errors/AppError.js';
-import { ErrorCodes } from '../errors/interfaces/errorCodes.js';
+import { ErrorCode } from '../errors/interfaces/errorCodes.js';
 import type { AccessTokenResponseDTO, ApiResponse } from '../@types/http.js';
 
 const authService = new AuthService(prisma);
@@ -61,8 +61,7 @@ export async function refreshController(req: Request, res: Response) {
   if (!refreshToken) {
     throw new AppError({
       message: "Refresh token not provided",
-      errorCode: ErrorCodes.UNAUTHORIZED,
-      statusCode: 401
+      errorCode: ErrorCode.UNAUTHORIZED
     });
   }
 
@@ -78,8 +77,7 @@ export async function refreshController(req: Request, res: Response) {
   } catch {
     throw new AppError({
       message: "Invalid refresh token",
-      errorCode: ErrorCodes.UNAUTHORIZED,
-      statusCode: 401
+      errorCode: ErrorCode.UNAUTHORIZED
     });
   }
 }

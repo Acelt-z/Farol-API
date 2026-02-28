@@ -38,7 +38,7 @@ export type CompanyCardResponseDTO = {
 
 export const CreateCompanySchema = z.object({
     name: z.string(),
-    cnpj: z.string().min(14).max(14).refine((c) => isCnpj(c), { message: "Invalid CNPJ format" }),
+    cnpj: z.string().min(14).max(18).refine((c) => isCnpj(c), { message: "Invalid CNPJ format" }),
     city: z.string(),
     uf: z.string().length(2),
     street: z.string(),

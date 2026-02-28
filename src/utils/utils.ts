@@ -1,7 +1,7 @@
 import type { ZodSafeParseResult } from "zod";
 import { ValidationError } from "../errors/ValidationError.js";
 import { AppError } from "../errors/AppError.js";
-import { ErrorCodes } from "../errors/interfaces/errorCodes.js";
+import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 
 export const DEFAULT_TRIAL_DAYS = 7;
 
@@ -32,8 +32,7 @@ export function getTokenSecrets(): Tokens{
     if (!access || !refresh || !issuer) {
         throw new AppError({
             message: "Define JWT secrets in environment variables",
-            errorCode: ErrorCodes.INTERNAL_SERVER_ERROR,
-            statusCode: 500
+            errorCode: ErrorCode.INTERNAL_SERVER_ERROR
         });
     }
 
@@ -44,8 +43,7 @@ export const addDaysToNow = (days: number): Date => {
     if (!Number.isInteger(days) || days <= 0) {
         throw new AppError({
             message: 'Days must be a positive integer',
-            errorCode: ErrorCodes.INVALID_INPUT,
-            statusCode: 400
+            errorCode: ErrorCode.INVALID_INPUT
         });
     }
 
@@ -61,8 +59,11 @@ export function assertUserIdxists(userId: string | undefined): asserts userId is
     if (!userId) {
         throw new AppError({
             message: "Unauthorized",
-            errorCode: ErrorCodes.UNAUTHORIZED,
-            statusCode: 401
+            errorCode: ErrorCode.UNAUTHORIZED
         });
     }
+}
+
+export function extractDigits(input: string): string {
+    return input.replace(/\D/g, '');
 }

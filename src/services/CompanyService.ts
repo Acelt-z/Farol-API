@@ -2,13 +2,13 @@ import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
 import { ValidationError } from "../errors/ValidationError.js";
 import { CompanyStatus, PlanType, Role, type PrismaClient } from "../generated/prisma/client.js";
 import { CompanyMapper, type CompanyCardResponseDTO, type CompanyResponseDTO, type CreateCompanyDTO } from "../models/company.js";
-import { addDaysToNow, DEFAULT_TRIAL_DAYS } from "../utils/utils.js";
+import { addDaysToNow, DEFAULT_TRIAL_DAYS, extractDigits } from "../utils/utils.js";
 
 export class CompanyService {
     constructor(private prisma: PrismaClient) {}
 
     async createCompany(dto: CreateCompanyDTO, userId: string): Promise<CompanyResponseDTO> {
-        const normalizedCnpj = dto.cnpj.replace(/\D/g, "");
+        const normalizedCnpj = extractDigits(dto.cnpj);
 
         const company = await this.prisma.$transaction(async (tx) => {
             const [userExists, cnpjExists] = await Promise.all([
