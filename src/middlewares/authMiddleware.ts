@@ -1,7 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { AppError } from "../errors/AppError.js";
-import { ErrorCodes } from "../errors/interfaces/errorCodes.js";
+import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 import { getTokenSecrets } from "../utils/utils.js";
 
 interface JwtPayload {
@@ -18,8 +18,7 @@ export function authMiddleware(
   if (!authHeader) {
     throw new AppError({
       message: "Unauthorized",
-      errorCode: ErrorCodes.UNAUTHORIZED,
-      statusCode: 401
+      errorCode: ErrorCode.UNAUTHORIZED,
     });
   }
 
@@ -28,8 +27,7 @@ export function authMiddleware(
   if (!token) {
     throw new AppError({
       message: "Unauthorized",
-      errorCode: ErrorCodes.UNAUTHORIZED,
-      statusCode: 401
+      errorCode: ErrorCode.UNAUTHORIZED
     });
   }
 
@@ -49,8 +47,7 @@ export function authMiddleware(
   } catch {
     throw new AppError({
       message: "Invalid or expired token",
-      errorCode: ErrorCodes.UNAUTHORIZED,
-      statusCode: 401
+      errorCode: ErrorCode.UNAUTHORIZED
     });
   }
 }

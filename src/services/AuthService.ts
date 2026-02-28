@@ -5,9 +5,9 @@ import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import jwt from "jsonwebtoken";
 import { AppError } from "../errors/AppError.js";
-import { ErrorCodes } from "../errors/interfaces/errorCodes.js";
+import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 import logger from "../utils/logger.js";
-import { getTokenSecrets } from "../utils/utils.js";
+import { extractDigits, getTokenSecrets } from "../utils/utils.js";
 
 export class AuthService {
   private ACCESS_SECRET: string;
@@ -39,11 +39,13 @@ export class AuthService {
   }
 
   async signUp(dto: SignUpDTO) {
+    const normalizedCpf = extractDigits(dto.cpf);
+    const normalizedPhone = extractDigits(dto.phone);
     const user = await this.prisma.$transaction(async (tx) => {
       const [emailExists, cpfExists, phoneExists] = await Promise.all([
         tx.user.findUnique({ where: { email: dto.email.trim() } }),
-        tx.user.findUnique({ where: { cpf: dto.cpf.trim() } }),
-        tx.user.findUnique({ where: { phone: dto.phone.trim() } })
+        tx.user.findUnique({ where: { cpf: normalizedCpf } }),
+        tx.user.findUnique({ where: { phone: normalizedPhone } })
       ]);
 
       const errors: ValidationItem[] = [];
@@ -66,15 +68,15 @@ export class AuthService {
         ? Number(process.env.SALT_ROUNDS)
         : 10;
 
-      const hash = await bcrypt.hash(dto.password, saltRounds);
+      const hash = await bcrypt.hash(dto.password.trim(), saltRounds);
 
       return tx.user.create({
         data: {
           firstName: dto.firstName.trim(),
           lastName: dto.lastName.trim(),
           email: dto.email.trim(),
-          cpf: dto.cpf.trim(),
-          phone: dto.phone.trim(),
+          cpf: normalizedCpf,
+          phone: normalizedPhone,
           password: hash
         }
       });
@@ -85,7 +87,7 @@ export class AuthService {
 
   async login(dto: LoginDTO) {
     const identifier =
-      dto.mode === "cpf" ? dto.cpf : dto.email;
+      dto.mode === "cpf" ? extractDigits(dto.cpf) : dto.email;
 
     const where =
       dto.mode === "cpf"
@@ -98,8 +100,7 @@ export class AuthService {
       logger.warn("Login failed");
       throw new AppError({
         message: "Invalid credentials",
-        errorCode: ErrorCodes.INVALID_CREDENTIALS,
-        statusCode: 401
+        errorCode: ErrorCode.INVALID_CREDENTIALS
       });
     }
 
@@ -111,8 +112,7 @@ export class AuthService {
     if (!passwordMatches) {
       throw new AppError({
         message: "Invalid credentials",
-        errorCode: ErrorCodes.INVALID_CREDENTIALS,
-        statusCode: 401
+        errorCode: ErrorCode.INVALID_CREDENTIALS
       });
     }
 
