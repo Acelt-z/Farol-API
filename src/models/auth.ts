@@ -2,18 +2,10 @@ import { isCpf } from 'validator-brazil';
 import { z } from 'zod';
 
 
-export const LoginSchema = z.discriminatedUnion("mode", [
-  z.object({
-    mode: z.literal("cpf"),
-    cpf: z.string("invalid CPF format").min(11).refine((c) => isCpf(c)),
-    password: z.string()
-  }),
-  z.object({
-    mode: z.literal("email"),
-    email: z.email(),
-    password: z.string()
-  })
-]);
+export const LoginSchema = z.object({
+  identifier: z.string().min(1, 'Email or CPF is required'),
+  password: z.string().min(1, 'Password is required'),
+});
 
 export type LoginDTO = z.infer<typeof LoginSchema>;
 

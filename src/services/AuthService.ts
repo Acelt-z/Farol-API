@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 import logger from "../utils/logger.js";
-import { extractDigits, getTokenSecrets } from "../utils/utils.js";
+import { extractDigits, getTokenSecrets, inputIsCpf, parseIdentifier } from "../utils/utils.js";
 
 export class AuthService {
   private ACCESS_SECRET: string;
@@ -86,15 +86,14 @@ export class AuthService {
   }
 
   async login(dto: LoginDTO) {
-    const identifier =
-      dto.mode === "cpf" ? extractDigits(dto.cpf) : dto.email;
+    const identifier = parseIdentifier(dto.identifier.trim());
 
-    const where =
-      dto.mode === "cpf"
-        ? { cpf: identifier }
-        : { email: identifier };
-
-    const user = await this.prisma.user.findUnique({ where });
+    const user = await this.prisma.user.findUnique({
+      where:
+        identifier.type === "cpf"
+          ? { cpf: identifier.value }
+          : { email: identifier.value }
+    });
 
     if (!user) {
       logger.warn("Login failed");
