@@ -8,7 +8,8 @@ import { AppError } from "../errors/AppError.js";
 import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 import logger from "../utils/logger.js";
 import { extractDigits, getTokenSecrets } from "../utils/utils.js";
-import { isCpfValid, isEmailValid, parseIdentifier } from "../validations/authValidations.js";
+import { isEmailValid, parseIdentifier } from "../validations/authValidations.js";
+import { isCpf } from "validator-brazil";
 
 export class AuthService {
   private ACCESS_SECRET: string;
@@ -63,7 +64,7 @@ export class AuthService {
         errors.push({ field: "cpf", errorLabel: "CPF already registered" });
       }
 
-      if (!isCpfValid(normalizedCpf)) {
+      if (!isCpf(normalizedCpf)) {
         errors.push({ field: "cpf", errorLabel: "Invalid CPF" });
       }
       

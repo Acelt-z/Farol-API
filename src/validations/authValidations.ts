@@ -3,12 +3,6 @@ import { extractDigits } from "../utils/utils.js";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 
-export function isCpfValid(input: string): boolean {
-    const clean = extractDigits(input);
-    
-    return clean.length === 11 && isCpf(clean);
-}
-
 export type UserIdentifier =
   | { type: "cpf"; value: string }
   | { type: "email"; value: string };
@@ -16,7 +10,7 @@ export type UserIdentifier =
 export function parseIdentifier(identifier: string): UserIdentifier {
   const digits = extractDigits(identifier);
 
-  if (digits.length === 11 && isCpfValid(identifier)) {
+  if (digits.length === 11 && isCpf(identifier)) {
     return { type: "cpf", value: digits };
   }
 

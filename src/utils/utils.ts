@@ -3,7 +3,6 @@ import { ValidationError } from "../errors/ValidationError.js";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 import { MissingParametersError } from "../errors/MissingParametersErrors.js";
-import { isCpf } from "validator-brazil";
 
 export const DEFAULT_TRIAL_DAYS = 7;
 
