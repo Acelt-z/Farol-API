@@ -10,7 +10,7 @@ export type UserIdentifier =
 export function parseIdentifier(identifier: string): UserIdentifier {
   const digits = extractDigits(identifier);
 
-  if (digits.length === 11 && isCpf(identifier)) {
+  if (isCpf(digits)) {
     return { type: "cpf", value: digits };
   }
 
