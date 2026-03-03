@@ -89,3 +89,29 @@ export function isBranch(cnpj: string): boolean {
 
   return branchCode !== "0001";
 }
+
+export function inputIsCpf(input: string): boolean {
+    const clean = extractDigits(input);
+    return clean.length === 11;
+}
+
+export type UserIdentifier =
+  | { type: "cpf"; value: string }
+  | { type: "email"; value: string };
+
+export function parseIdentifier(identifier: string): UserIdentifier {
+  const digits = extractDigits(identifier);
+
+  if (digits.length === 11 && inputIsCpf(identifier)) {
+    return { type: "cpf", value: digits };
+  }
+
+  if (identifier.includes("@")) {
+    return { type: "email", value: identifier.toLowerCase() };
+  }
+
+  throw new AppError({
+    message: "Invalid identifier",
+    errorCode: ErrorCode.INVALID_IDENTIFIER
+  });
+}
