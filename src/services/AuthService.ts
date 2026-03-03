@@ -7,7 +7,8 @@ import jwt from "jsonwebtoken";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 import logger from "../utils/logger.js";
-import { extractDigits, getTokenSecrets, inputIsCpf, parseIdentifier } from "../utils/utils.js";
+import { extractDigits, getTokenSecrets } from "../utils/utils.js";
+import { isCpfValid, isEmailValid, parseIdentifier } from "../validations/authValidations.js";
 
 export class AuthService {
   private ACCESS_SECRET: string;
@@ -54,8 +55,16 @@ export class AuthService {
         errors.push({ field: "email", errorLabel: "Email already registered" });
       }
 
+      if (!isEmailValid(dto.email)) {
+        errors.push({ field: "email", errorLabel: "Invalid email format" });
+      }
+
       if (cpfExists) {
         errors.push({ field: "cpf", errorLabel: "CPF already registered" });
+      }
+
+      if (!isCpfValid(normalizedCpf)) {
+        errors.push({ field: "cpf", errorLabel: "Invalid CPF" });
       }
       
       if (phoneExists) {

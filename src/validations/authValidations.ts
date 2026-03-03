@@ -1,0 +1,35 @@
+import { isCpf } from "validator-brazil";
+import { extractDigits } from "../utils/utils.js";
+import { AppError } from "../errors/AppError.js";
+import { ErrorCode } from "../errors/interfaces/errorCodes.js";
+
+export function isCpfValid(input: string): boolean {
+    const clean = extractDigits(input);
+    
+    return clean.length === 11 && isCpf(clean);
+}
+
+export type UserIdentifier =
+  | { type: "cpf"; value: string }
+  | { type: "email"; value: string };
+
+export function parseIdentifier(identifier: string): UserIdentifier {
+  const digits = extractDigits(identifier);
+
+  if (digits.length === 11 && isCpfValid(identifier)) {
+    return { type: "cpf", value: digits };
+  }
+
+  if (identifier.includes("@")) {
+    return { type: "email", value: identifier.toLowerCase() };
+  }
+
+  throw new AppError({
+    message: "Invalid identifier",
+    errorCode: ErrorCode.INVALID_IDENTIFIER
+  });
+}
+
+export function isEmailValid(email:string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
