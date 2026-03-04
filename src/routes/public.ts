@@ -3,10 +3,6 @@ import { loginController, refreshController, registerController } from "../contr
 
 const router = Router();
 
-router.get("/ping", async (_req, res) => {
-  res.status(200).json({ message: "Pong!" });
-});
-
 /**
  * @swagger
  * /login:
