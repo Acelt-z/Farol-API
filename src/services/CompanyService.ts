@@ -2,9 +2,9 @@ import { ForbiddenError } from "../errors/Forbidden.js";
 import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
 import { NotFoundError } from "../errors/NotFound.js";
 import { ValidationError } from "../errors/ValidationError.js";
-import { CompanyStatus, PlanType, Role, type PrismaClient } from "../generated/prisma/client.js";
+import { CompanyStatus, PlanType, Prisma, Role, type PrismaClient } from "../generated/prisma/client.js";
 import { BranchMapper } from "../models/branchCompany.js";
-import { CompanyMapper, type CompanyCardResponseDTO, type CompanyResponseDTO, type CreateCompanyDTO, type UpdateCompanyDTO } from "../models/company.js";
+import { CompanyMapper, type ChangePlanDTO, type CompanyCardResponseDTO, type CompanyResponseDTO, type CreateCompanyDTO, type UpdateCompanyDTO } from "../models/company.js";
 import logger from "../utils/logger.js";
 import { addDaysToNow, buildUpdateData, DEFAULT_TRIAL_DAYS, extractDigits } from "../utils/utils.js";
 
@@ -200,5 +200,80 @@ export class CompanyService {
         });
 
         return CompanyMapper.toCompleteResponse({company: company.updatedCompany, totalWorkers: company.workersCount});
+    }
+
+    async changePlan(
+        companyId: string,
+        dto: ChangePlanDTO,
+        userId: string
+    ): Promise<CompanyCardResponseDTO> {
+
+        const result = await this.prisma.$transaction(async (tx) => {
+
+            const userCompanies = await this.getUserCompanyRelation(tx, userId, companyId);
+
+            if (userCompanies.company.parentCompanyId) {
+                throw new ForbiddenError(`Branch don't have permission to do this operation`);
+            }
+
+            const plan = await tx.plan.findUnique({
+                where: {
+                    name: dto.plan
+                }
+            });
+
+            if (!plan) {
+                throw new NotFoundError("Plan");
+            }
+
+            const updatedCompany = await tx.company.update({
+                where: { id: companyId },
+                data: {
+                    plan: {
+                        connect: {
+                            id: plan.id
+                        }
+                    }
+                },
+                include: {
+                    _count: {
+                        select: { userCompanyRoles: true }
+                    }
+                }
+            });
+
+            return updatedCompany;
+        });
+
+        return CompanyMapper.toCompleteResponse({
+            company: result,
+            totalWorkers: result._count.userCompanyRoles
+        });
+    }
+
+    private async getUserCompanyRelation(tx: Prisma.TransactionClient, userId: string, companyId: string) {
+        const userCompanies = await tx.userCompany.findUnique({
+            where: { companyId_userId: {userId, companyId } },
+            include: {
+                company: {
+                    include: {
+                        owner: true,
+                        branchCompanies: {
+                            include: {
+                                _count: {
+                                    select: { userCompanyRoles: true }
+                                }
+                            }
+                        },
+                        _count: {
+                            select: { userCompanyRoles: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!userCompanies) throw new NotFoundError(`User and Company don't have any relation`);
+        return userCompanies;
     }
 }

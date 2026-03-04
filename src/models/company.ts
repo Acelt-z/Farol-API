@@ -1,5 +1,5 @@
 import { isCnpj } from "validator-brazil";
-import type { CompanyStatus } from "../generated/prisma/client.js";
+import { PlanType, type CompanyStatus } from "../generated/prisma/client.js";
 import {z } from "zod";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCode } from "../errors/interfaces/errorCodes.js";
@@ -70,6 +70,11 @@ export const UpdateCompanySchema = z.object({
 
 export type UpdateCompanyDTO = z.infer<typeof UpdateCompanySchema>;
 
+export const ChangePlanSchema = z.object({
+    plan: z.enum(PlanType)
+});
+
+export type ChangePlanDTO = z.infer<typeof ChangePlanSchema>; 
 
 export class CompanyMapper {
     static toCompleteResponse({company, totalWorkers, branches}: ResponseArgs): CompanyResponseDTO{
