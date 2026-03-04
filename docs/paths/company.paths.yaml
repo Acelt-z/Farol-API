@@ -55,6 +55,38 @@
                 data:
                   $ref: "../schemas/company.schema.yaml#/CompanyResponse"
 
+/company/{companyId}/plan:
+  patch:
+    summary: Change the plan of a company
+    tags: [Company]
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: companyId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/company.schema.yaml#/ChangeCompanyPlanRequest"
+    responses:
+      200:
+        description: Company has your plan changed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  $ref: "../schemas/company.schema.yaml#/CompanyResponse"
+
 /company/{parentCompanyId}/branch:
   post:
     summary: Create a branch for a parent company

@@ -91,3 +91,12 @@ UpdateCompanyRequest:
     complement:
       type: string
       nullable: true
+
+ChangeCompanyPlanRequest:
+  type: object
+  required:
+    - plan
+  properties:
+    plan:
+      type: string
+      enum: [BASIC, PRO, PREMIUM, ENTERPRISE]
