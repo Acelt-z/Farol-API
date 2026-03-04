@@ -6,6 +6,10 @@ import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 import type { BranchResponseDTO } from "./branchCompany.js";
 import type { ResponseArgs } from "../@types/http.js";
 
+export const CompanyParamSchema = z.object({
+  companyId: z.uuid()
+});
+
 
 export type CompanyResponseDTO = {
     id: string;
@@ -47,12 +51,25 @@ export const CreateCompanySchema = z.object({
     city: z.string(),
     uf: z.string().length(2),
     street: z.string(),
-    zipCode: z.string().min(8).max(8),
+    zipCode: z.string().length(8),
     number: z.number(),
     complement: z.string().optional()
 });
 
 export type CreateCompanyDTO = z.infer<typeof CreateCompanySchema>;
+
+export const UpdateCompanySchema = z.object({
+    name: z.string().optional(),
+    city: z.string().optional(),
+    uf: z.string().length(2).optional(),
+    street: z.string().optional(),
+    zipCode: z.string().length(8, 'Zip code must contain exactly 8 characters').optional(),
+    number: z.number().optional(),
+    complement: z.string().optional()
+});
+
+export type UpdateCompanyDTO = z.infer<typeof UpdateCompanySchema>;
+
 
 export class CompanyMapper {
     static toCompleteResponse({company, totalWorkers, branches}: ResponseArgs): CompanyResponseDTO{

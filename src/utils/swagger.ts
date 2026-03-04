@@ -1,4 +1,17 @@
 import swaggerJsdoc from "swagger-jsdoc";
+import SwaggerParser from "@apidevtools/swagger-parser";
+import path from 'path';
+
+export const getSwaggerDocument = async () => {
+  const swaggerPath = path.join(process.cwd(), 'docs', 'openapi.yaml'); 
+  
+  // O dereference vai ler o openapi.yaml e substituir todos os $ref
+  // pelo conteúdo real dos seus arquivos company.paths.yaml, etc.
+  const document = await SwaggerParser.dereference(swaggerPath);
+  
+  return document;
+};
+
 
 const options = {
   definition: {
