@@ -51,7 +51,7 @@ export const CreateCompanySchema = z.object({
     city: z.string(),
     uf: z.string().length(2),
     street: z.string(),
-    zipCode: z.string().min(8).max(8),
+    zipCode: z.string().length(8),
     number: z.number(),
     complement: z.string().optional()
 });
