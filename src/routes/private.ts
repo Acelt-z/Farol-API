@@ -415,6 +415,153 @@ router.post('/company', async (req, res) => {
     await createCompanyController(req, res);
 });
 
+/**
+ * @swagger
+ * /company/{companyId}:
+ *   patch:
+ *     summary: Update company basic information
+ *     tags: [Company]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Company ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: At least one field must be provided
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Tech Solutions Ltda ATUALIZADO"
+ *               city:
+ *                 type: string
+ *                 example: "São Paulo ATUALIZADO"
+ *               uf:
+ *                 type: string
+ *                 example: "RJ"
+ *               street:
+ *                 type: string
+ *                 example: "Rua das Palmeiras ATUALIZADO"
+ *               zipCode:
+ *                 type: string
+ *                 example: "01310930"
+ *               number:
+ *                 type: number
+ *                 example: 8878
+ *               complement:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "Sala 402 ATUALIZADO"
+ *     responses:
+ *       200:
+ *         description: Company updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                     name:
+ *                       type: string
+ *                     cnpj:
+ *                       type: string
+ *                     city:
+ *                       type: string
+ *                     uf:
+ *                       type: string
+ *                     zipCode:
+ *                       type: string
+ *                     number:
+ *                       type: number
+ *                     complement:
+ *                       type: string
+ *                       nullable: true
+ *                     totalWorkers:
+ *                       type: number
+ *                       example: 1
+ *                     branches:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             format: uuid
+ *                           name:
+ *                             type: string
+ *                           cnpj:
+ *                             type: string
+ *                           city:
+ *                             type: string
+ *                           uf:
+ *                             type: string
+ *                           zipCode:
+ *                             type: string
+ *                           number:
+ *                             type: number
+ *                           complement:
+ *                             type: string
+ *                             nullable: true
+ *                           totalWorkers:
+ *                             type: number
+ *                           status:
+ *                             type: string
+ *                           ownerId:
+ *                             type: string
+ *                             format: uuid
+ *                           parentCompanyId:
+ *                             type: string
+ *                             format: uuid
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *                     trialEndsAt:
+ *                       type: string
+ *                       format: date-time
+ *                     status:
+ *                       type: string
+ *                       example: TRIAL
+ *                     ownerId:
+ *                       type: string
+ *                       format: uuid
+ *                     planId:
+ *                       type: number
+ *                       example: 1
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (e.g., branch company or invalid status)
+ *       404:
+ *         description: Company not found
+ */
 router.patch('/company/:companyId', async (req, res) => {
     await updateCompanyController(req, res);
 });
