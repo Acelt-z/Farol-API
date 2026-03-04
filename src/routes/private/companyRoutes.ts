@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createCompanyController, updateCompanyController } from "../../controllers/company.controller.js";
+import { changePlanController, createCompanyController, updateCompanyController } from "../../controllers/company.controller.js";
 import { createBranchCompanyController } from "../../controllers/branch.controller.js";
 
 const router = Router();
@@ -12,8 +12,8 @@ router.patch('/:companyId', async (req, res) => {
     await updateCompanyController(req, res);
 });
 
-router.patch('/:companyId/plan', async (_req, _res) => {
-    // TODO: Make plan update
+router.patch('/:companyId/plan', async (req, res) => {
+    await changePlanController(req, res);
 });
 
 router.patch('/:companyId/status', async (_req, _res) => {

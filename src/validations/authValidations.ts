@@ -10,6 +10,7 @@ export type UserIdentifier =
 export function isEmailValid(email:string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
+
 export function parseIdentifier(identifier: string): UserIdentifier {
     const digits = extractDigits(identifier);
 

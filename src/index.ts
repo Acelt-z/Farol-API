@@ -33,14 +33,13 @@ app.use(cookie());
 
 
 // Documentation
-// app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 getSwaggerDocument()
   .then((swaggerDocument) => {
     app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
   })
   .catch((err) => {
-    logger.error("Erro ao carregar os arquivos do Swagger:", err);
+    logger.error("Error on swagger files loading:", err);
   });
 
 // Routes
