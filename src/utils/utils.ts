@@ -79,3 +79,9 @@ export function assertUserIdxists(userId: string | undefined): asserts userId is
 export function extractDigits(input: string): string {
     return input.replace(/\D/g, '');
 }
+
+export function buildUpdateData<T extends object>(dto: T) {
+  return Object.fromEntries(
+    Object.entries(dto).filter(([_, value]) => value !== undefined)
+  );
+}

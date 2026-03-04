@@ -21,30 +21,22 @@ router.get("/ping", async (_req, res) => {
  *             type: object
  *             required:
  *               - password
- *               - mode
  *             properties:
- *               email:
- *                 type: string
- *               cpf:
+ *               identifier:
  *                 type: string
  *               password:
  *                 type: string
- *               mode:
- *                 type: string
- *                 enum: [email, cpf]
  *           examples:
  *             loginWithEmail:
  *               summary: Login using email
  *               value:
- *                 email: user@email.com
+ *                 identifier: user@email.com
  *                 password: StrongPassword123
- *                 mode: email
  *             loginWithCpf:
  *               summary: Login using CPF
  *               value:
- *                 cpf: "12345678901"
+ *                 identifier: "123.456.789-01"
  *                 password: StrongPassword123
- *                 mode: cpf
  *     responses:
  *       200:
  *         description: Login successful

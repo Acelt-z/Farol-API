@@ -26,4 +26,3 @@ export function parseIdentifier(identifier: string): UserIdentifier {
         errorCode: ErrorCode.INVALID_IDENTIFIER
     });
 }
-

@@ -1,6 +1,6 @@
 import {type Request, type Response} from 'express';
 import { assertUserIdxists, getParsedData } from '../utils/utils.js';
-import { CreateCompanySchema } from '../models/company.js';
+import { CompanyParamSchema, CreateCompanySchema, UpdateCompanySchema } from '../models/company.js';
 import { CompanyService } from '../services/CompanyService.js';
 import { prisma } from '../utils/prisma.js';
 import { ErrorCode } from '../errors/interfaces/errorCodes.js';
@@ -41,4 +41,22 @@ export async function getUserCompaniesCards(req: Request, res: Response) {
         success: true,
         data: companies
     });
+}
+
+export async function updateCompanyController(req: Request, res: Response) {
+    assertUserIdxists(req.userId);
+
+    const result = UpdateCompanySchema.safeParse(req.body);
+    const data = getParsedData(result);
+
+    const parameterParseResult = CompanyParamSchema.safeParse(req.params);
+    const paramData = getParsedData(parameterParseResult);
+
+    const updatedCompany = await companyService.updateCompany(paramData.companyId, data, req.userId);
+
+    return res.json({
+        success: true,
+        data: updatedCompany
+    });
+    
 }

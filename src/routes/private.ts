@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getCurrentUserController } from "../controllers/user.controller.js";
-import { createCompanyController, getUserCompaniesCards, getUserCompaniesController } from "../controllers/company.controller.js";
+import { createCompanyController, getUserCompaniesCards, getUserCompaniesController, updateCompanyController } from "../controllers/company.controller.js";
 import { createBranchCompanyController } from "../controllers/branch.controller.js";
 
 const router = Router();
@@ -415,6 +415,10 @@ router.post('/company', async (req, res) => {
     await createCompanyController(req, res);
 });
 
+router.patch('/company/:companyId', async (req, res) => {
+    await updateCompanyController(req, res);
+});
+
 /**
  * @swagger
  * /company/{parentCompanyId}/branch:
@@ -580,6 +584,8 @@ router.post('/company', async (req, res) => {
 router.post('/company/:parentCompanyId/branch', async (req, res) => {
     await createBranchCompanyController(req, res);
 });
+
+
 
 
 export default router;

@@ -1,9 +1,12 @@
+import { ForbiddenError } from "../errors/Forbidden.js";
 import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
+import { NotFoundError } from "../errors/NotFound.js";
 import { ValidationError } from "../errors/ValidationError.js";
 import { CompanyStatus, PlanType, Role, type PrismaClient } from "../generated/prisma/client.js";
 import { BranchMapper } from "../models/branchCompany.js";
-import { CompanyMapper, type CompanyCardResponseDTO, type CompanyResponseDTO, type CreateCompanyDTO } from "../models/company.js";
-import { addDaysToNow, DEFAULT_TRIAL_DAYS, extractDigits } from "../utils/utils.js";
+import { CompanyMapper, type CompanyCardResponseDTO, type CompanyResponseDTO, type CreateCompanyDTO, type UpdateCompanyDTO } from "../models/company.js";
+import logger from "../utils/logger.js";
+import { addDaysToNow, buildUpdateData, DEFAULT_TRIAL_DAYS, extractDigits } from "../utils/utils.js";
 
 export class CompanyService {
     constructor(private prisma: PrismaClient) {}
@@ -137,5 +140,65 @@ export class CompanyService {
                 totalWorkers: totalWorkers
             })
         );
+    }
+
+    async updateCompany(companyId: string, dto: UpdateCompanyDTO, userId: string): Promise<CompanyResponseDTO> {
+        const company = await this.prisma.$transaction(async (tx) => {
+            const userCompanyRelation = await tx.userCompany.findUnique({
+                    where: {
+                        companyId_userId: {companyId, userId}
+                    },
+                    include: {
+                        company: {
+                            select: {
+                                id: true,
+                                status: true,
+                                parentCompanyId: true
+                            }
+                        }
+                    }
+            });
+
+            if (!userCompanyRelation || userCompanyRelation.role === Role.MEMBER) throw new ForbiddenError();
+
+            const company = userCompanyRelation.company;
+
+            if (!company) throw new NotFoundError('Company');
+
+            if (company.parentCompanyId) {
+                logger.warn('Attempt to update branch company via main update endpoint', {
+                    companyId,
+                    userId
+                });
+                
+                throw new ForbiddenError();
+            } 
+            
+
+            if (company.status === CompanyStatus.SUSPENDED || company.status === CompanyStatus.CANCELED) {
+                throw new ForbiddenError('Company cannot be edited in current status');
+            }
+
+            const data = buildUpdateData(dto);
+
+            if (Object.keys(data).length === 0) {
+                throw new ValidationError([
+                    { field: "body", errorLabel: "No fields provided for update" }
+                ]);
+            }
+
+            const updatedCompany = await tx.company.update({
+                where: { id: company.id },
+                data: data
+            });
+            
+            const workersCount = await tx.userCompany.count({
+                where: { companyId: company.id }
+            });
+
+            return { updatedCompany, workersCount };
+        });
+
+        return CompanyMapper.toCompleteResponse({company: company.updatedCompany, totalWorkers: company.workersCount});
     }
 }
