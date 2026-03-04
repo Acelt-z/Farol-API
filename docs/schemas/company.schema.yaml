@@ -1,0 +1,93 @@
+CompanyResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    cnpj:
+      type: string
+    city:
+      type: string
+    uf:
+      type: string
+    zipCode:
+      type: string
+    number:
+      type: number
+    complement:
+      type: string
+      nullable: true
+    totalWorkers:
+      type: number
+    branches:
+      type: array
+      items:
+        $ref: "./branch.schema.yaml#/BranchResponse"
+    trialEndsAt:
+      type: string
+      format: date-time
+    status:
+      type: string
+      enum: [TRIAL, ACTIVE, SUSPENDED, CANCELED]
+    ownerId:
+      type: string
+      format: uuid
+    planId:
+      type: number
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+CreateCompanyRequest:
+  type: object
+  required:
+    - name
+    - cnpj
+    - street
+    - city
+    - uf
+    - zipCode
+    - number
+  properties:
+    name:
+      type: string
+    cnpj:
+      type: string
+    street:
+      type: string
+    city:
+      type: string
+    uf:
+      type: string
+    zipCode:
+      type: string
+    number:
+      type: number
+    complement:
+      type: string
+      nullable: true
+
+UpdateCompanyRequest:
+  type: object
+  description: At least one field must be provided
+  properties:
+    name:
+      type: string
+    city:
+      type: string
+    uf:
+      type: string
+    street:
+      type: string
+    zipCode:
+      type: string
+    number:
+      type: number
+    complement:
+      type: string
+      nullable: true

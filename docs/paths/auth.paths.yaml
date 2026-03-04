@@ -1,0 +1,57 @@
+/login:
+  post:
+    summary: Login
+    tags: [Auth]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/auth.schema.yaml#/LoginRequest"
+    responses:
+      "200":
+        description: Login successful
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/auth.schema.yaml#/LoginResponse"
+      "400":
+        description: Validation error
+      "401":
+        description: Unauthorized (invalid credentials)
+
+/signUp:
+  post:
+    summary: Register a new user
+    tags: [Auth]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/auth.schema.yaml#/SignUpRequest"
+    responses:
+      "200":
+        description: User registered successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/auth.schema.yaml#/SignUpResponse"
+      "400":
+        description: Validation error
+      "409":
+        description: Email, CPF or phone already registered
+
+/refresh:
+  post:
+    summary: Refresh Access Token
+    tags: [Auth]
+    responses:
+      "200":
+        description: Token refreshed successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/auth.schema.yaml#/LoginResponse"
+      "401":
+        description: Unauthorized (Invalid or expired refresh token)
