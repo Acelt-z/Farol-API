@@ -4,12 +4,13 @@ import express from "express";
 import http from "http";
 import logger from "./utils/logger.js";
 import PublicRoutes from './routes/public.js';
-import PrivateRoutes from './routes/private.js';
+import CompanyRoutes from './routes/private/companyRoutes.js';
+import UserRoutes from './routes/private/userRoutes.js';
 import swaggerUi from "swagger-ui-express";
 
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { config } from "dotenv";
-import { swaggerSpec } from "./utils/swagger.js";
+import { getSwaggerDocument } from "./utils/swagger.js";
 import { authMiddleware } from './middlewares/authMiddleware.js';
 
 config();
@@ -32,16 +33,26 @@ app.use(cookie());
 
 
 // Documentation
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// routes
+getSwaggerDocument()
+  .then((swaggerDocument) => {
+    app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  })
+  .catch((err) => {
+    logger.error("Error on swagger files loading:", err);
+  });
+
+// Routes
 app.use('/', PublicRoutes);
-app.use('/', authMiddleware, PrivateRoutes);
+app.use('/me', authMiddleware, UserRoutes);
+app.use('/company', authMiddleware, CompanyRoutes);
 
 
 // Error middleware
 app.use(errorHandler);
-// Initialize server
+
+
+// Start server
 server.listen(PORT, () => {
   logger.info(`Server running on PORT: ${PORT}`);
 });

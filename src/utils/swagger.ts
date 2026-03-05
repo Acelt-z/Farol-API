@@ -1,20 +1,9 @@
-import swaggerJsdoc from "swagger-jsdoc";
+import SwaggerParser from "@apidevtools/swagger-parser";
+import path from 'path';
 
-const options = {
-  definition: {
-    openapi: "3.0.0",
-    info: {
-      title: "API - Farol das Finanças",
-      version: "1.0.0",
-      description: "API do ERP do Farol",
-    },
-    servers: [
-      {
-        url: "http://localhost:3000",
-      },
-    ],
-  },
-  apis: ["./src/routes/*.ts"],
+export const getSwaggerDocument = async () => {
+  const swaggerPath = path.join(process.cwd(), 'docs', 'openapi.yaml'); 
+  const document = await SwaggerParser.dereference(swaggerPath);
+  
+  return document;
 };
-
-export const swaggerSpec = swaggerJsdoc(options);

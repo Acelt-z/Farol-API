@@ -1,0 +1,37 @@
+BranchResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    cnpj:
+      type: string
+    city:
+      type: string
+    uf:
+      type: string
+    zipCode:
+      type: string
+    number:
+      type: number
+    complement:
+      type: string
+      nullable: true
+    totalWorkers:
+      type: number
+    status:
+      type: string
+    ownerId:
+      type: string
+      format: uuid
+    parentCompanyId:
+      type: string
+      format: uuid
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time

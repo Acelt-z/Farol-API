@@ -1,0 +1,67 @@
+LoginRequest:
+  type: object
+  required:
+    - identifier
+    - password
+  properties:
+    identifier:
+      type: string
+      description: "Pode ser o Email ou o CPF do usuário"
+      example: "user@email.com"
+    password:
+      type: string
+      format: password
+      example: "StrongPassword123!"
+
+SignUpRequest:
+  type: object
+  required:
+    - firstName
+    - lastName
+    - cpf
+    - email
+    - phone
+    - password
+  properties:
+    firstName:
+      type: string
+      example: "John"
+    lastName:
+      type: string
+      example: "Doe"
+    cpf:
+      type: string
+      example: "12345678901"
+    email:
+      type: string
+      format: email
+      example: "john.doe@email.com"
+    phone:
+      type: string
+      example: "+5511999999999"
+    password:
+      type: string
+      format: password
+      example: "StrongPassword123!"
+
+LoginResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+SignUpResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "./user.schema.yaml#/UserResponse"

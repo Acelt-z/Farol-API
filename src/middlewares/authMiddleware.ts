@@ -42,12 +42,12 @@ export function authMiddleware(
     ) as JwtPayload;
 
     req.userId = payload.sub;
-
+    
     next();
   } catch {
-    throw new AppError({
-      message: "Invalid or expired token",
+    next(new AppError({
+      message: 'Invalid or expired token',
       errorCode: ErrorCode.UNAUTHORIZED
-    });
+    }))
   }
 }

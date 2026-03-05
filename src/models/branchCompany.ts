@@ -1,7 +1,7 @@
 import type { ResponseArgs } from "../@types/http.js";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCode } from "../errors/interfaces/errorCodes.js";
-import { isBranch } from "../utils/utils.js";
+import { isBranch } from "../validations/branchValidations.js";
 import { type CompanyCardResponseDTO, type CompanyResponseDTO } from "./company.js";
 import {z} from 'zod';
 
@@ -37,7 +37,7 @@ export class BranchMapper {
         if (!company.parentCompanyId) {
             throw new AppError({
                 message: "A branch company must have an associated parent company",
-                errorCode: ErrorCode.VALIDATION_ERROR
+                errorCode: ErrorCode.FORBIDDEN
             });
         }
 

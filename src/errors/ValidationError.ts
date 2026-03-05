@@ -1,3 +1,4 @@
+
 import { AppError } from "./AppError.js";
 import { ErrorCode, getErrorCategory } from "./interfaces/errorCodes.js";
 import type { ValidationItem } from "./interfaces/errorTypes.js";

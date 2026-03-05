@@ -1,0 +1,28 @@
+openapi: 3.0.0
+info:
+  title: Farol API
+  version: 0.0.1
+
+paths:
+  /login:
+    $ref: "./paths/auth.paths.yaml#/~1login"
+  /signUp:
+    $ref: "./paths/auth.paths.yaml#/~1signUp"
+  /refresh:
+    $ref: "./paths/auth.paths.yaml#/~1refresh"
+
+  /company:
+    $ref: "./paths/company.paths.yaml#/~1company"
+  /company/{companyId}:
+    $ref: "./paths/company.paths.yaml#/~1company~1{companyId}"
+  /company/{companyId}/plan:
+    $ref: "./paths/company.paths.yaml#/~1company~1{companyId}~1plan"
+  /company/{parentCompanyId}/branch:
+    $ref: "./paths/company.paths.yaml#/~1company~1{parentCompanyId}~1branch"
+
+  /me:
+    $ref: "./paths/me.paths.yaml#/~1me"
+  /me/companies:
+    $ref: "./paths/me.paths.yaml#/~1me~1companies"
+  /me/companies/cards:
+    $ref: "./paths/me.paths.yaml#/~1me~1companies~1cards"

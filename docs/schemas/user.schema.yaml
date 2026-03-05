@@ -1,0 +1,36 @@
+UserResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      example: "a1b2c3d4-e5f6-7890-1234-56789abcdef0"
+    firstName:
+      type: string
+      example: "John"
+    lastName:
+      type: string
+      example: "Doe"
+    email:
+      type: string
+      format: email
+      example: "john.doe@email.com"
+    cpf:
+      type: string
+      example: "123.456.789-00"
+    phone:
+      type: string
+      nullable: true
+      example: "+5511999999999"
+    emailVerified:
+      type: boolean
+      example: false
+    phoneVerified:
+      type: boolean
+      example: false
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time

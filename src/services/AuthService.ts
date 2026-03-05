@@ -6,13 +6,16 @@ import type { PrismaClient } from "../generated/prisma/client.js";
 import jwt from "jsonwebtoken";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCode } from "../errors/interfaces/errorCodes.js";
-import logger from "../utils/logger.js";
 import { extractDigits, getTokenSecrets } from "../utils/utils.js";
+import { parseIdentifier } from "../validations/authValidations.js";
+
+const FAKE_HASH = "$2b$10$CwTycUXWue0Thq9StjUM0uJ8l8Gk0z7s8AjtKoa6HgMHqmpYyqn1K";
 
 export class AuthService {
   private ACCESS_SECRET: string;
   private REFRESH_SECRET: string;
   private ISSUER_SECRET: string;
+  private saltRounds: string | number;
 
   constructor(private prisma: PrismaClient) {
     const {accessSecret, refreshSecret, issuerSecret} = getTokenSecrets();
@@ -20,6 +23,9 @@ export class AuthService {
     this.ACCESS_SECRET = accessSecret;
     this.REFRESH_SECRET = refreshSecret;
     this.ISSUER_SECRET = issuerSecret;
+    this.saltRounds = process.env.SALT_ROUNDS
+        ? process.env.SALT_ROUNDS
+        : 10;
   }
 
   private generateTokens(userId: string) {
@@ -57,18 +63,17 @@ export class AuthService {
       if (cpfExists) {
         errors.push({ field: "cpf", errorLabel: "CPF already registered" });
       }
-      
+
+
       if (phoneExists) {
         errors.push({ field: "phone", errorLabel: "Phone already registered" });
       }
 
       if (errors.length > 0) throw new ValidationError(errors);
 
-      const saltRounds = process.env.SALT_ROUNDS
-        ? Number(process.env.SALT_ROUNDS)
-        : 10;
 
-      const hash = await bcrypt.hash(dto.password.trim(), saltRounds);
+
+      const hash = await bcrypt.hash(dto.password.trim(), this.saltRounds);
 
       return tx.user.create({
         data: {
@@ -86,33 +91,23 @@ export class AuthService {
   }
 
   async login(dto: LoginDTO) {
-    const identifier =
-      dto.mode === "cpf" ? extractDigits(dto.cpf) : dto.email;
+    const identifier = parseIdentifier(dto.identifier.trim());
 
-    const where =
-      dto.mode === "cpf"
-        ? { cpf: identifier }
-        : { email: identifier };
-
-    const user = await this.prisma.user.findUnique({ where });
-
-    if (!user) {
-      logger.warn("Login failed");
-      throw new AppError({
-        message: "Invalid credentials",
-        errorCode: ErrorCode.INVALID_CREDENTIALS
-      });
-    }
+    const user = await this.prisma.user.findUnique({
+      where:
+        identifier.type === "cpf"
+          ? { cpf: identifier.value }
+          : { email: identifier.value }
+    });
 
     const passwordMatches = await bcrypt.compare(
       dto.password,
-      user.password
-    );
+      user?.password ?? FAKE_HASH);
 
-    if (!passwordMatches) {
+    if (!user || !passwordMatches) {
       throw new AppError({
         message: "Invalid credentials",
-        errorCode: ErrorCode.INVALID_CREDENTIALS
+        errorCode: ErrorCode.INVALID_CREDENTIALS,
       });
     }
 
