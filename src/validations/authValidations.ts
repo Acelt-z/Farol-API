@@ -23,7 +23,11 @@ export function parseIdentifier(identifier: string): UserIdentifier {
     }
 
     throw new AppError({
-        message: "Invalid identifier",
-        errorCode: ErrorCode.INVALID_IDENTIFIER
+        message: "Validation Failed",
+        errorCode: ErrorCode.VALIDATION_ERROR,
+        fields: [{
+            field: 'identifier',
+            errorLabel: 'Invalid identifier'
+        }]
     });
 }

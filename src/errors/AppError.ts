@@ -8,6 +8,20 @@ export class AppError extends Error {
   public readonly errorCode: ErrorCode;
   public readonly fields?: ValidationItem[] | undefined;
 
+  public getErrors() {
+    const grouped: Record<string, string[]> = {};
+
+    for (const field of this.fields ?? []) {
+      if (!grouped[field.field]) {
+        grouped[field.field] = [];
+      }
+
+      grouped[field.field]?.push(field.errorLabel);
+    }
+
+    return grouped;
+  }
+
   constructor({ message, errorCode, fields }: CustomError) {
     super(message);
 
