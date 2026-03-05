@@ -37,7 +37,7 @@ export class BranchMapper {
         if (!company.parentCompanyId) {
             throw new AppError({
                 message: "A branch company must have an associated parent company",
-                errorCode: ErrorCode.VALIDATION_ERROR
+                errorCode: ErrorCode.FORBIDDEN
             });
         }
 

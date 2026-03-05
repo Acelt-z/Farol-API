@@ -17,7 +17,7 @@ export function errorHandler(
       error: getErrorCategory({status: err.statusCode}),
       code: err.errorCode,
       message: err.message,
-      fields: err.fields,
+      fields: err.getErrors(),
       timestamp: now,
       path: req.originalUrl
     } as ApiErrorResponse;
@@ -38,7 +38,6 @@ export function errorHandler(
     status: 500,
     error: getErrorCategory({status: 500}),
     code: ErrorCode.INTERNAL_SERVER_ERROR,
-    fields: [],
     message: "An unexpected error occurred",
     timestamp: now,
     path: req.originalUrl

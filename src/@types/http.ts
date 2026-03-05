@@ -1,6 +1,5 @@
 import { type Request } from "express";
 import type { ErrorCode } from "../errors/interfaces/errorCodes.js";
-import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
 import type { Company } from "../generated/prisma/client.js";
 import type { BranchResponseDTO } from "../models/branchCompany.js";
 
@@ -17,7 +16,7 @@ export type ApiErrorResponse = {
   error: string; // category (VALIDATION_ERROR, INTERNAL_ERROR, etc.)
   code: ErrorCode;
   message: string;
-  fields?: ValidationItem[];
+  fields?: Record<string, string[]>;
   timestamp: string;
   path: string;
 };
