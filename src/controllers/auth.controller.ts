@@ -27,7 +27,7 @@ export async function loginController(req: Request, res: Response) {
         sameSite: "strict",
         maxAge: 15 * 60 * 1000 // 15 minutes
         })
-        .json({ body });
+        .json( body );
 }
 
 export async function registerController(req: Request, res: Response) {
