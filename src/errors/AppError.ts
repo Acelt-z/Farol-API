@@ -19,7 +19,7 @@ export class AppError extends Error {
       grouped[field.field]?.push(field.errorLabel);
     }
 
-    return grouped;
+    return Object.keys(grouped).length > 0 ? grouped : null;
   }
 
   constructor({ message, errorCode, fields }: CustomError) {
@@ -27,7 +27,7 @@ export class AppError extends Error {
 
     this.errorCode = errorCode;
     this.statusCode = ErrorCodesHttpStatus[errorCode].httpStatus;
-    this.fields = fields ?? [];
+    this.fields = fields;
 
     Object.setPrototypeOf(this, AppError.prototype);
   }
