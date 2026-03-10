@@ -12,19 +12,20 @@ export function getParsedData<T>(result: ZodSafeParseResult<T>, errorType: Error
             field: issue.path.join('.'),
             errorLabel: issue.message
         }));
-        
-        if (errorType === ErrorCode.VALIDATION_ERROR) {
-            throw new ValidationError(errors);
-        }
 
-        if (errorType === ErrorCode.MISSING_PARAMETERS) {
-            throw new MissingParametersError(errors)
-        }
+        switch (errorType) {
+            case ErrorCode.VALIDATION_ERROR:
+                throw new ValidationError(errors);
 
-        throw new AppError({
-            message: "Unknown validation error",
-            errorCode: errorType
-        });
+            case ErrorCode.MISSING_PARAMETERS:
+                throw new MissingParametersError(errors);
+                
+            default:
+                throw new AppError({
+                    message: "Unknown validation error",
+                    errorCode: errorType
+                });
+        }
     }
 
     return result.data;
