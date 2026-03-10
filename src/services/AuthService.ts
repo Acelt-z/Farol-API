@@ -15,7 +15,7 @@ export class AuthService {
   private ACCESS_SECRET: string;
   private REFRESH_SECRET: string;
   private ISSUER_SECRET: string;
-  private saltRounds: string | number;
+  private saltRounds: number;
 
   constructor(private prisma: PrismaClient) {
     const {accessSecret, refreshSecret, issuerSecret} = getTokenSecrets();
@@ -23,9 +23,7 @@ export class AuthService {
     this.ACCESS_SECRET = accessSecret;
     this.REFRESH_SECRET = refreshSecret;
     this.ISSUER_SECRET = issuerSecret;
-    this.saltRounds = process.env.SALT_ROUNDS
-        ? process.env.SALT_ROUNDS
-        : 10;
+    this.saltRounds = Number.parseInt(process.env.SALT_ROUNDS ?? "10");
   }
 
   private generateTokens(userId: string) {
