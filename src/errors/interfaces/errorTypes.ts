@@ -3,7 +3,7 @@ import type { ErrorCode } from "./errorCodes.js";
 export type CustomError = {
   message: string;
   errorCode: ErrorCode;
-  fields?: ValidationItem[];
+  fields?: ValidationItem[] | undefined;
 };
 
 export type CustomErrorResponse = {

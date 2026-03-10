@@ -16,7 +16,7 @@ export type ApiErrorResponse = {
   error: string; // category (VALIDATION_ERROR, INTERNAL_ERROR, etc.)
   code: ErrorCode;
   message: string;
-  fields?: Record<string, string[]>;
+  fields?: Record<string, string[]> | null;
   timestamp: string;
   path: string;
 };

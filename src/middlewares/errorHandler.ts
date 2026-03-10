@@ -40,6 +40,7 @@ export function errorHandler(
     code: ErrorCode.INTERNAL_SERVER_ERROR,
     message: "An unexpected error occurred",
     timestamp: now,
+    fields: null,
     path: req.originalUrl
   } as ApiErrorResponse;
 
