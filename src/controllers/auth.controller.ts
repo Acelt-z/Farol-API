@@ -2,7 +2,6 @@ import {type Request, type Response} from 'express';
 import { AuthService } from '../services/AuthService.js';
 import { LoginSchema, SignUpSchema } from '../models/auth.js';
 import { getParsedData } from '../utils/utils.js';
-import logger from '../utils/logger.js';
 import { prisma } from '../utils/prisma.js';
 import { AppError } from '../errors/AppError.js';
 import { ErrorCode } from '../errors/interfaces/errorCodes.js';
@@ -32,7 +31,6 @@ export async function loginController(req: Request, res: Response) {
 }
 
 export async function registerController(req: Request, res: Response) {
-    logger.info(req.body);
     const result = SignUpSchema.safeParse(req.body);
     const data = getParsedData(result);
 
@@ -50,7 +48,8 @@ export async function registerController(req: Request, res: Response) {
         sameSite: "strict",
         maxAge: 15 * 60 * 1000 // 15 minutes
         })
-        .json({ body });
+        .status(201)
+        .json( body );
 }
 
 
