@@ -24,6 +24,9 @@
   },
   "author": "Farol das Finanças",
   "license": "ISC",
+  "engines": {
+    "node": "22"
+  },
   "bugs": {
     "url": "https://github.com/Farol-das-Financas/Farol-API/issues"
   },

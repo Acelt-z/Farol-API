@@ -5,22 +5,27 @@ import { ErrorCode } from "../errors/interfaces/errorCodes.js";
 
 config();
 
-const projectId = process.env.FIREBASE_PROJECT_ID;
+const projectId =
+  process.env.FB_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT;
 
 if (!projectId) {
   throw new AppError({
-    message: "Missing FIREBASE_PROJECT_ID configuration",
+    message: "Missing Firebase Project ID configuration (FB_PROJECT_ID)",
     errorCode: ErrorCode.CONFIGURATION_ERROR,
   });
 }
 
 if (!admin.apps.length) {
-  admin.initializeApp({
+  const options: admin.AppOptions = {
     projectId,
-    ...(process.env.FIREBASE_STORAGE_BUCKET && {
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    }),
-  });
+  };
+
+  const storageBucket = process.env.FB_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET;
+  if (storageBucket) {
+    options.storageBucket = storageBucket;
+  }
+
+  admin.initializeApp(options);
 }
 
 export const adminAuth = admin.auth();
