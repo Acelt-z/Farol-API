@@ -8,7 +8,8 @@ export const ErrorCodesHttpStatus = {
   INVALID_INPUT: { httpStatus: 400 },
   MISSING_PARAMETERS: {httpStatus: 400},
   INVALID_IDENTIFIER: {httpStatus: 400},
-  FORBIDDEN: {httpStatus: 403}
+  FORBIDDEN: {httpStatus: 403},
+  CONFIGURATION_ERROR: {httpStatus: 500}
 } as const;
 
 export const ErrorCode = {
@@ -21,7 +22,8 @@ export const ErrorCode = {
   INVALID_INPUT: "INVALID_INPUT",
   INVALID_IDENTIFIER: "INVALID_IDENTIFIER",
   MISSING_PARAMETERS: "MISSING_PARAMETERS",
-  FORBIDDEN: "FORBIDDEN"
+  FORBIDDEN: "FORBIDDEN",
+  CONFIGURATION_ERROR: "CONFIGURATION_ERROR"
 } as const;
 
 export type ErrorCode = typeof ErrorCode[keyof typeof ErrorCode];

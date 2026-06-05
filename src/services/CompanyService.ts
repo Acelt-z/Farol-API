@@ -1,279 +1,249 @@
 import { ForbiddenError } from "../errors/Forbidden.js";
-import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
 import { NotFoundError } from "../errors/NotFound.js";
 import { ValidationError } from "../errors/ValidationError.js";
-import { CompanyStatus, PlanType, Prisma, Role, type PrismaClient } from "../generated/prisma/client.js";
+import { Role, CompanyStatus, type CompanyDoc, type UserDoc } from "../models/firestoreModels.js";
 import { BranchMapper } from "../models/branchCompany.js";
-import { CompanyMapper, type ChangePlanDTO, type CompanyCardResponseDTO, type CompanyResponseDTO, type CreateCompanyDTO, type UpdateCompanyDTO } from "../models/company.js";
-import logger from "../utils/logger.js";
-import { addDaysToNow, buildUpdateData, DEFAULT_TRIAL_DAYS, extractDigits } from "../utils/utils.js";
+import {
+  CompanyMapper,
+  type ChangePlanDTO,
+  type CompanyCardResponseDTO,
+  type CompanyResponseDTO,
+  type CreateCompanyDTO,
+  type UpdateCompanyDTO,
+} from "../models/company.js";
+import {
+  addDaysToNow,
+  buildUpdateData,
+  DEFAULT_TRIAL_DAYS,
+  extractDigits,
+} from "../utils/utils.js";
+import { db } from "../config/firebase.js";
 
 export class CompanyService {
-    constructor(private prisma: PrismaClient) {}
+  constructor() {}
 
-    async createCompany(dto: CreateCompanyDTO, userId: string): Promise<CompanyResponseDTO> {
-        const normalizedCnpj = extractDigits(dto.cnpj);
+  async createCompany(dto: CreateCompanyDTO, userId: string): Promise<CompanyResponseDTO> {
+    const normalizedCnpj = extractDigits(dto.cnpj);
 
-        const company = await this.prisma.$transaction(async (tx) => {
-            const [userExists, cnpjExists] = await Promise.all([
-                tx.user.findUnique({ where: { id: userId } }),
-                tx.company.findUnique({ where: { cnpj: normalizedCnpj } })
-            ]);
+    const companyId = db.collection("companies").doc().id;
 
-            const errors: ValidationItem[] = [];
-            
-            if (!userExists) {
-                errors.push({ field: "userId", errorLabel: "User does not exist" });
-                throw new ValidationError(errors);
-            }
-            
-            if (cnpjExists) {
-                errors.push({ field: "cnpj", errorLabel: "CNPJ already registered" });
-            }
+    await db.runTransaction(async (transaction) => {
+      const userRef = db.collection("users").doc(userId);
+      const cnpjQuery = db.collection("companies").where("cnpj", "==", normalizedCnpj).limit(1);
 
-            if (errors.length > 0) {
-                throw new ValidationError(errors);
-            }
+      const [userDoc, cnpjSnapshot] = await Promise.all([
+        transaction.get(userRef),
+        transaction.get(cnpjQuery),
+      ]);
 
-            const newCompany = await tx.company.create({
-                data: {
-                    name: dto.name,
-                    cnpj: normalizedCnpj,
+      if (!userDoc.exists) {
+        throw new ValidationError([{ field: "userId", errorLabel: "User does not exist" }]);
+      }
 
-                    street: dto.street,
-                    city: dto.city,
-                    uf: dto.uf,
-                    zipCode: dto.zipCode,
-                    number: dto.number,
-                    complement: dto.complement || null,
+      if (!cnpjSnapshot.empty) {
+        throw new ValidationError([{ field: "cnpj", errorLabel: "CNPJ already registered" }]);
+      }
 
-                    owner: {
-                        connect: { id: userId }
-                    },
+      const newCompany: CompanyDoc = {
+        id: companyId,
+        name: dto.name,
+        cnpj: normalizedCnpj,
+        street: dto.street,
+        city: dto.city,
+        uf: dto.uf,
+        zipCode: dto.zipCode,
+        number: dto.number,
+        complement: dto.complement ?? null,
+        ownerId: userId,
+        trialEndsAt: new Date(addDaysToNow(DEFAULT_TRIAL_DAYS)).toISOString(),
+        planId: "plan_basic", // Placeholder for actual plan ID
+        status: CompanyStatus.TRIAL,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-                    trialEndsAt: new Date(addDaysToNow(DEFAULT_TRIAL_DAYS)), // default trial days
-                    plan: {
-                        connect: { name: PlanType.BASIC }
-                    },
-                    status: CompanyStatus.TRIAL
-                    
-                }
+      const userData = userDoc.data() as UserDoc | undefined;
+      const updatedRoles = [
+        ...(userData?.companyRoles || []),
+        {
+          companyId: companyId,
+          role: Role.OWNER,
+          isBillableUser: true,
+        },
+      ];
+
+      transaction.set(db.collection("companies").doc(companyId), newCompany);
+      transaction.update(userRef, {
+        companyRoles: updatedRoles,
+        updatedAt: new Date().toISOString(),
+      });
+    });
+
+    const companySnap = await db.collection("companies").doc(companyId).get();
+    const companyData = companySnap.data() as Omit<CompanyDoc, "id"> | undefined;
+    if (!companyData) throw new NotFoundError("Company");
+
+    const createdCompany: CompanyDoc = { id: companySnap.id, ...companyData } as CompanyDoc;
+    return CompanyMapper.toCompleteResponse({ company: createdCompany, totalWorkers: 1 });
+  }
+
+  async getUserCompanies(userId: string): Promise<CompanyResponseDTO[]> {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (!userDoc.exists) return [];
+
+    const userData = userDoc.data() as UserDoc | undefined;
+    const roles = userData?.companyRoles || [];
+
+    const companies: CompanyResponseDTO[] = [];
+
+    for (const role of roles) {
+      const companyDoc = await db.collection("companies").doc(role.companyId).get();
+      if (companyDoc.exists) {
+        const companyDataRaw = companyDoc.data() as Omit<CompanyDoc, "id"> | undefined;
+        if (!companyDataRaw) continue;
+
+        const companyData: CompanyDoc = { id: companyDoc.id, ...companyDataRaw };
+
+        // Fetch workers count
+        const workersSnapshot = await db.collection("users").get();
+        const workersCount = workersSnapshot.docs.filter((doc) => {
+          const data = doc.data() as UserDoc | undefined;
+          return data?.companyRoles?.some((r) => r.companyId === role.companyId);
+        }).length;
+
+        // Fetch branches
+        const branchesSnapshot = await db
+          .collection("companies")
+          .where("parentCompanyId", "==", role.companyId)
+          .get();
+        const branches = branchesSnapshot.docs
+          .map((doc) => {
+            const branchDataRaw = doc.data() as Omit<CompanyDoc, "id"> | undefined;
+            if (!branchDataRaw) return null;
+            return BranchMapper.toCompleteResponse({
+              company: { id: doc.id, ...branchDataRaw } as CompanyDoc,
+              totalWorkers: 0,
             });
-            
-            await tx.userCompany.create({
-                data: {
-                    companyId: newCompany.id,
-                    userId: userId,
-                    role: Role.OWNER,
-                    isBillableUser: true
-                }
-            });
-            
+          })
+          .filter((b): b is NonNullable<typeof b> => b !== null);
 
-            return newCompany;
-
-        });
-
-        return CompanyMapper.toCompleteResponse({company, totalWorkers: 1});
-    }
-
-    async getUserCompanies(userId: string): Promise<CompanyResponseDTO[]> {
-        const userCompanies = await this.prisma.userCompany.findMany({
-            where: { userId },
-            include: {
-                company: {
-                    include: {
-                        owner: true,
-                        branchCompanies: {
-                            include: {
-                                _count: {
-                                    select: { userCompanyRoles: true }
-                                }
-                            }
-                        },
-                        _count: {
-                            select: { userCompanyRoles: true }
-                        }
-                    }
-                }
-            }
-        });
-
-        return userCompanies.map((uc) =>
-            CompanyMapper.toCompleteResponse({
-                company: uc.company,
-                totalWorkers: uc.company._count.userCompanyRoles,
-                branches: uc.company.branchCompanies.map((b) =>
-                    BranchMapper.toCompleteResponse({
-                        company: b,
-                        totalWorkers: b._count.userCompanyRoles
-                    })
-                )
-            })
+        companies.push(
+          CompanyMapper.toCompleteResponse({
+            company: companyData,
+            totalWorkers: workersCount,
+            branches,
+          }),
         );
+      }
     }
 
-    async getUserCompaniesCard(userId: string): Promise<CompanyCardResponseDTO[]> {
-        const [userCompanies, totalWorkers] = await this.prisma.$transaction([
-            this.prisma.userCompany.findMany({
-                where: {
-                    userId
-                },
-                include: {
-                    company: {
-                        include: {
-                            owner: true
-                        }
-                    }
-                }
-            }),
-            this.prisma.userCompany.count({
-                where: {
-                    userId
-                }
-            })
-        ]);
+    return companies;
+  }
 
-        return userCompanies.map((uc) =>
-            CompanyMapper.toCardResponse({
-                company: uc.company,
-                totalWorkers: totalWorkers
-            })
+  async getUserCompaniesCard(userId: string): Promise<CompanyCardResponseDTO[]> {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (!userDoc.exists) return [];
+
+    const userData = userDoc.data() as UserDoc | undefined;
+    const roles = userData?.companyRoles || [];
+
+    const cards: CompanyCardResponseDTO[] = [];
+
+    for (const role of roles) {
+      const companyDoc = await db.collection("companies").doc(role.companyId).get();
+      if (companyDoc.exists) {
+        const companyDataRaw = companyDoc.data() as Omit<CompanyDoc, "id"> | undefined;
+        if (!companyDataRaw) continue;
+
+        const companyData: CompanyDoc = { id: companyDoc.id, ...companyDataRaw };
+
+        const workersSnapshot = await db.collection("users").get();
+        const workersCount = workersSnapshot.docs.filter((doc) => {
+          const data = doc.data() as UserDoc | undefined;
+          return data?.companyRoles?.some((r) => r.companyId === role.companyId);
+        }).length;
+
+        cards.push(
+          CompanyMapper.toCardResponse({
+            company: companyData,
+            totalWorkers: workersCount,
+          }),
         );
+      }
     }
 
-    async updateCompany(companyId: string, dto: UpdateCompanyDTO, userId: string): Promise<CompanyResponseDTO> {
-        const company = await this.prisma.$transaction(async (tx) => {
-            const userCompanyRelation = await tx.userCompany.findUnique({
-                    where: {
-                        companyId_userId: {companyId, userId}
-                    },
-                    include: {
-                        company: {
-                            select: {
-                                id: true,
-                                status: true,
-                                parentCompanyId: true
-                            }
-                        }
-                    }
-            });
+    return cards;
+  }
 
-            if (!userCompanyRelation || userCompanyRelation.role === Role.MEMBER) throw new ForbiddenError();
+  async updateCompany(
+    companyId: string,
+    dto: UpdateCompanyDTO,
+    userId: string,
+  ): Promise<CompanyResponseDTO> {
+    const userRef = db.collection("users").doc(userId);
+    const companyRef = db.collection("companies").doc(companyId);
 
-            const company = userCompanyRelation.company;
+    return await db.runTransaction(async (transaction) => {
+      const [userDoc, companyDoc] = await Promise.all([
+        transaction.get(userRef),
+        transaction.get(companyRef),
+      ]);
 
-            if (!company) throw new NotFoundError('Company');
+      if (!userDoc.exists) throw new NotFoundError("User");
+      if (!companyDoc.exists) throw new NotFoundError("Company");
 
-            if (company.parentCompanyId) {
-                logger.warn('Attempt to update branch company via main update endpoint', {
-                    companyId,
-                    userId
-                });
-                
-                throw new ForbiddenError();
-            } 
-            
+      const userData = userDoc.data() as UserDoc;
+      const companyData = companyDoc.data() as CompanyDoc;
 
-            if (company.status === CompanyStatus.SUSPENDED || company.status === CompanyStatus.CANCELED) {
-                throw new ForbiddenError('Company cannot be edited in current status');
-            }
+      const userRole = userData.companyRoles?.find((r) => r.companyId === companyId);
+      if (!userRole || userRole.role === Role.MEMBER) throw new ForbiddenError();
 
-            const data = buildUpdateData(dto);
+      if (companyData.parentCompanyId)
+        throw new ForbiddenError("Cannot update branch via this endpoint");
 
-            if (Object.keys(data).length === 0) {
-                throw new ValidationError([
-                    { field: "body", errorLabel: "No fields provided for update" }
-                ]);
-            }
+      if (
+        companyData.status === CompanyStatus.SUSPENDED ||
+        companyData.status === CompanyStatus.CANCELED
+      ) {
+        throw new ForbiddenError("Company cannot be edited in current status");
+      }
 
-            const updatedCompany = await tx.company.update({
-                where: { id: company.id },
-                data: data
-            });
-            
-            const workersCount = await tx.userCompany.count({
-                where: { companyId: company.id }
-            });
+      const updateData = buildUpdateData(dto);
+      const finalUpdate = { ...updateData, updatedAt: new Date().toISOString() };
+      transaction.update(companyRef, finalUpdate);
 
-            return { updatedCompany, workersCount };
-        });
+      const updatedCompany: CompanyDoc = { ...companyData, ...finalUpdate } as CompanyDoc;
+      return CompanyMapper.toCompleteResponse({ company: updatedCompany, totalWorkers: 0 });
+    });
+  }
 
-        return CompanyMapper.toCompleteResponse({company: company.updatedCompany, totalWorkers: company.workersCount});
-    }
+  async changePlan(
+    companyId: string,
+    dto: ChangePlanDTO,
+    userId: string,
+  ): Promise<CompanyResponseDTO> {
+    const companyRef = db.collection("companies").doc(companyId);
 
-    async changePlan(
-        companyId: string,
-        dto: ChangePlanDTO,
-        userId: string
-    ): Promise<CompanyCardResponseDTO> {
+    return await db.runTransaction(async (transaction) => {
+      const userDoc = await transaction.get(db.collection("users").doc(userId));
+      const companyDoc = await transaction.get(companyRef);
 
-        const result = await this.prisma.$transaction(async (tx) => {
+      if (!userDoc.exists || !companyDoc.exists) throw new NotFoundError("User or Company");
 
-            const userCompanies = await this.getUserCompanyRelation(tx, userId, companyId);
+      const userData = userDoc.data() as UserDoc;
+      const companyData = companyDoc.data() as CompanyDoc;
 
-            if (userCompanies.company.parentCompanyId) {
-                throw new ForbiddenError(`Branch don't have permission to do this operation`);
-            }
+      const userRole = userData.companyRoles?.find((r) => r.companyId === companyId);
+      if (!userRole || userRole.role !== Role.OWNER) throw new ForbiddenError();
 
-            const plan = await tx.plan.findUnique({
-                where: {
-                    name: dto.plan
-                }
-            });
+      transaction.update(companyRef, { planId: dto.plan, updatedAt: new Date().toISOString() });
 
-            if (!plan) {
-                throw new NotFoundError("Plan");
-            }
-
-            const updatedCompany = await tx.company.update({
-                where: { id: companyId },
-                data: {
-                    plan: {
-                        connect: {
-                            id: plan.id
-                        }
-                    }
-                },
-                include: {
-                    _count: {
-                        select: { userCompanyRoles: true }
-                    }
-                }
-            });
-
-            return updatedCompany;
-        });
-
-        return CompanyMapper.toCompleteResponse({
-            company: result,
-            totalWorkers: result._count.userCompanyRoles
-        });
-    }
-
-    private async getUserCompanyRelation(tx: Prisma.TransactionClient, userId: string, companyId: string) {
-        const userCompanies = await tx.userCompany.findUnique({
-            where: { companyId_userId: {userId, companyId } },
-            include: {
-                company: {
-                    include: {
-                        owner: true,
-                        branchCompanies: {
-                            include: {
-                                _count: {
-                                    select: { userCompanyRoles: true }
-                                }
-                            }
-                        },
-                        _count: {
-                            select: { userCompanyRoles: true }
-                        }
-                    }
-                }
-            }
-        });
-
-        if (!userCompanies) throw new NotFoundError(`User and Company don't have any relation`);
-        return userCompanies;
-    }
+      const updatedCompany: CompanyDoc = {
+        ...companyData,
+        planId: dto.plan,
+        updatedAt: new Date().toISOString(),
+      };
+      return CompanyMapper.toCompleteResponse({ company: updatedCompany, totalWorkers: 0 });
+    });
+  }
 }

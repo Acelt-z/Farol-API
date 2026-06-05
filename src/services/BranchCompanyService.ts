@@ -1,87 +1,84 @@
-import type { ValidationItem } from "../errors/interfaces/errorTypes.js";
-import { NotFoundError } from "../errors/NotFound.js";
 import { ValidationError } from "../errors/ValidationError.js";
-import { CompanyStatus, PrismaClient, Role } from "../generated/prisma/client.js";
-import { BranchMapper, type BranchResponseDTO, type CreateBranchCompanyDTO } from "../models/branchCompany.js";
+import { CompanyStatus, Role, type CompanyDoc, type UserDoc } from "../models/firestoreModels.js";
+import {
+  BranchMapper,
+  type BranchResponseDTO,
+  type CreateBranchCompanyDTO,
+} from "../models/branchCompany.js";
 import { extractDigits } from "../utils/utils.js";
+import { db } from "../config/firebase.js";
+import { NotFoundError } from "../errors/NotFound.js";
 
 export class BranchCompanyService {
-    constructor(private prisma: PrismaClient) {}
+  constructor() {}
 
-    async createBranchCompany(dto: CreateBranchCompanyDTO, ownerId: string, parentCompanyId: string): Promise<BranchResponseDTO> {
-        const normalizedCnpj = extractDigits(dto.cnpj);
-        const branch = await this.prisma.$transaction(async (tx) => {
-            const [userExists, cnpjExists, companyExists, userCompanyRelationExists] = await Promise.all([
-                tx.user.findUnique({ where: { id: ownerId } }),
-                tx.company.findUnique({ where: { cnpj: normalizedCnpj } }),
-                tx.company.findUnique({ where: { id: parentCompanyId } }),
-                tx.userCompany.findUnique({ where: { companyId_userId: { userId: ownerId, companyId: parentCompanyId } } })
-            ]);
+  async createBranchCompany(
+    dto: CreateBranchCompanyDTO,
+    userId: string,
+    parentCompanyId: string,
+  ): Promise<BranchResponseDTO> {
+    const normalizedCnpj = extractDigits(dto.cnpj);
+    const branchId = db.collection("companies").doc().id;
 
-            const parentRoot = companyExists?.cnpj?.substring(0, 8);
-            const branchRoot = normalizedCnpj.substring(0, 8);
+    await db.runTransaction(async (transaction) => {
+      const userRef = db.collection("users").doc(userId);
+      const parentCompanyRef = db.collection("companies").doc(parentCompanyId);
+      const cnpjQuery = db.collection("companies").where("cnpj", "==", normalizedCnpj).limit(1);
+      const [userDoc, parentCompanyDoc, cnpjSnapshot] = await Promise.all([
+        transaction.get(userRef),
+        transaction.get(parentCompanyRef),
+        transaction.get(cnpjQuery),
+      ]);
+      if (!userDoc.exists)
+        throw new ValidationError([{ field: "userId", errorLabel: "User does not exist" }]);
+      if (!cnpjSnapshot.empty)
+        throw new ValidationError([{ field: "cnpj", errorLabel: "CNPJ already registered" }]);
+      if (!parentCompanyDoc.exists)
+        throw new ValidationError([
+          { field: "parentCompanyId", errorLabel: "Parent company does not exist" },
+        ]);
+      const parentData = parentCompanyDoc.data() as CompanyDoc | undefined;
+      const userData = userDoc.data() as UserDoc | undefined;
+      if (!parentData || !userData) {
+        throw new ValidationError([{ field: "data", errorLabel: "Required data is missing" }]);
+      }
+      const userRole = userData.companyRoles?.find((r) => r.companyId === parentCompanyId);
+      if (!userRole || userRole.role === Role.MEMBER) {
+        throw new ValidationError([{ field: "parentCompanyId", errorLabel: "Permission denied" }]);
+      }
+      const parentRoot = parentData.cnpj.substring(0, 8);
+      const branchRoot = normalizedCnpj.substring(0, 8);
+      if (parentRoot !== branchRoot) {
+        throw new ValidationError([
+          { field: "cnpj", errorLabel: "Branch CNPJ base does not match parent" },
+        ]);
+      }
+      const newBranch: Omit<CompanyDoc, "id"> = {
+        name: dto.name,
+        cnpj: normalizedCnpj,
+        street: dto.street,
+        city: dto.city,
+        uf: dto.uf,
+        zipCode: dto.zipCode,
+        number: dto.number,
+        complement: dto.complement ?? null,
+        ownerId: parentData.ownerId,
+        parentCompanyId: parentCompanyId,
+        status: CompanyStatus.ACTIVE,
+        planId: parentData.planId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-            const errors: ValidationItem[] = [];
+      transaction.set(db.collection("companies").doc(branchId), newBranch);
+    });
 
-            const validations = [
-                [!userExists, "userId", "User does not exist"],
-                [cnpjExists, "cnpj", "CNPJ already registered"],
-                [!companyExists, "parentCompanyId", "Parent company does not exist"],
-                [companyExists?.status !== CompanyStatus.ACTIVE && companyExists?.status !== CompanyStatus.TRIAL, "parentCompanyId", "Parent company is not active"],
-                [!userCompanyRelationExists, "parentCompanyId", "User is not associated with the parent company"],
-                [userCompanyRelationExists?.role === Role.MEMBER, "parentCompanyId", "User does not have permission to create a branch for the parent company"],
-                [companyExists && parentRoot !== branchRoot, "cnpj", "Branch CNPJ does not belong to the same company base number"]
-            ] as const;
-            
-            for (const [condition, field, errorLabel] of validations) {
-                if (condition) {
-                    errors.push({ field: field, errorLabel: errorLabel });
-                }
-            }      
+    const branchSnap = await db.collection("companies").doc(branchId).get();
+    const branchData = branchSnap.data() as Omit<CompanyDoc, "id"> | undefined;
+    if (!branchData) throw new NotFoundError("Branch");
 
-            if (errors.length > 0) {
-                throw new ValidationError(errors);
-            }
-
-            const newBranch = await tx.company.create({
-                data: {
-                    name: dto.name,
-                    cnpj: normalizedCnpj,
-
-                    street: dto.street,
-                    city: dto.city,
-                    uf: dto.uf,
-                    zipCode: dto.zipCode,
-                    number: dto.number,
-                    complement: dto.complement || null,
-
-                    owner: {
-                        connect: { id: (await this.getParentCompanyOwnerId(parentCompanyId)).ownerId }
-                    },
-                    parentCompany: {
-                        connect: { id: parentCompanyId }
-                    },
-
-                    status: CompanyStatus.ACTIVE,
-                }
-            });
-
-            return newBranch;
-        });
-    
-        return BranchMapper.toCompleteResponse({company: branch, totalWorkers: 0});
-    }
-
-    private async getParentCompanyOwnerId(parentCompanyId: string): Promise<{ ownerId: string }> {
-        const company = await this.prisma.company.findUnique({
-            where: { id: parentCompanyId },
-            select: { ownerId: true }
-        });
-
-        if (!company) {
-            throw new NotFoundError('Parent company');
-        }
-
-        return company;
-    }
+    const createdBranch: CompanyDoc = { id: branchSnap.id, ...branchData } as CompanyDoc;
+    return BranchMapper.toCompleteResponse({ company: createdBranch, totalWorkers: 0 });
+  }
 }
+

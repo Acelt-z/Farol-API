@@ -1,82 +1,34 @@
-import {type Request, type Response} from 'express';
-import { AuthService } from '../services/AuthService.js';
-import { LoginSchema, SignUpSchema } from '../models/auth.js';
-import { getParsedData } from '../utils/utils.js';
-import { prisma } from '../utils/prisma.js';
-import { AppError } from '../errors/AppError.js';
-import { ErrorCode } from '../errors/interfaces/errorCodes.js';
-import type { AccessTokenResponseDTO, ApiResponse } from '../@types/http.js';
+import { type Request, type Response } from "express";
+import { AuthService } from "../services/AuthService.js";
+import { GoogleSignInSchema } from "../models/auth.js";
+import { getParsedData } from "../utils/utils.js";
+import { AppError } from "../errors/AppError.js";
+import { ErrorCode } from "../errors/interfaces/errorCodes.js";
+import type { ApiResponse } from "../@types/http.js";
+import { UserMapper, type UserResponseDTO } from "../models/user.js";
 
-const authService = new AuthService(prisma);
+const authService = new AuthService();
 
-export async function loginController(req: Request, res: Response) {
-    const result = LoginSchema.safeParse(req.body);
-    const data = getParsedData(result);
-
-    const { accessToken, refreshToken } = await authService.login(data);
-
-    const body: ApiResponse<AccessTokenResponseDTO> = {
-      success: true,
-      data: {accessToken}
-    };
-
-    return res
-        .cookie("refresh_token", refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "strict",
-        maxAge: 15 * 60 * 1000 // 15 minutes
-        })
-        .json( body );
-}
-
-export async function registerController(req: Request, res: Response) {
-    const result = SignUpSchema.safeParse(req.body);
-    const data = getParsedData(result);
-
-    const { accessToken, refreshToken } = await authService.signUp(data);
-
-    const body: ApiResponse<AccessTokenResponseDTO> = {
-      success: true,
-      data: {accessToken}
-    };
-
-    return res
-        .cookie("refresh_token", refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "strict",
-        maxAge: 15 * 60 * 1000 // 15 minutes
-        })
-        .status(201)
-        .json( body );
-}
-
-
-
-export async function refreshController(req: Request, res: Response) {
-  const refreshToken = req.cookies.refresh_token;
-
-  if (!refreshToken) {
-    throw new AppError({
-      message: "Refresh token not provided",
-      errorCode: ErrorCode.UNAUTHORIZED
-    });
-  }
-
+export async function googleSignIn(req: Request, res: Response) {
   try {
-    const newAccessToken = authService.generateNewAccessToken(refreshToken);
+    const result = GoogleSignInSchema.safeParse(req.body);
+    const data = getParsedData(result);
 
-    const body: ApiResponse<AccessTokenResponseDTO> = {
+    const userDoc = await authService.googleSignIn(data);
+    const user = UserMapper.toResponse(userDoc);
+
+    const body: ApiResponse<UserResponseDTO> = {
       success: true,
-      data: {accessToken: newAccessToken}
+      data: user,
     };
 
     return res.status(200).json(body);
-  } catch {
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+
     throw new AppError({
-      message: "Invalid refresh token",
-      errorCode: ErrorCode.UNAUTHORIZED
+      message: "Google sign-in failed",
+      errorCode: ErrorCode.INVALID_CREDENTIALS,
     });
   }
 }

@@ -1,7 +1,6 @@
 import cors from 'cors';
 import cookie from 'cookie-parser';
 import express from "express";
-import http from "http";
 import logger from "./utils/logger.js";
 import PublicRoutes from './routes/public.js';
 import CompanyRoutes from './routes/private/companyRoutes.js';
@@ -12,14 +11,12 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 import { config } from "dotenv";
 import { getSwaggerDocument } from "./utils/swagger.js";
 import { authMiddleware } from './middlewares/authMiddleware.js';
+import { onRequest } from "firebase-functions/v2/https";
 
 config();
 
-const PORT = process.env.PORT ?? 3000;
-
 // Server
 const app = express();
-const server = http.createServer(app);
 
 app.use(express.json())
 
@@ -51,8 +48,5 @@ app.use('/company', authMiddleware, CompanyRoutes);
 // Error middleware
 app.use(errorHandler);
 
+export const api = onRequest(app);
 
-// Start server
-server.listen(PORT, () => {
-  logger.info(`Server running on PORT: ${PORT}`);
-});

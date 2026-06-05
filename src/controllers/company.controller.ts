@@ -2,10 +2,9 @@ import {type Request, type Response} from 'express';
 import { assertUserIdxists, getParsedData } from '../utils/utils.js';
 import { ChangePlanSchema, CompanyParamSchema, CreateCompanySchema, UpdateCompanySchema } from '../models/company.js';
 import { CompanyService } from '../services/CompanyService.js';
-import { prisma } from '../utils/prisma.js';
 import { ErrorCode } from '../errors/interfaces/errorCodes.js';
 
-const companyService = new CompanyService(prisma);
+const companyService = new CompanyService();
 
 export async function createCompanyController(req: Request, res: Response) {
     assertUserIdxists(req.userId);

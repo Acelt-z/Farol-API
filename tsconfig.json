@@ -30,5 +30,5 @@
     "skipLibCheck": true
   },
   "include": ["src"],
-  "exclude": ["prisma"],
+  "exclude": ["node_modules", "dist"]
 }

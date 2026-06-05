@@ -2,6 +2,8 @@ import { isCpf } from "validator-brazil";
 import { extractDigits } from "../utils/utils.js";
 import { AppError } from "../errors/AppError.js";
 import { ErrorCode } from "../errors/interfaces/errorCodes.js";
+import type { GoogleSignInDTO } from "../models/auth.js";
+import { ValidationError } from "../errors/ValidationError.js";
 
 export type UserIdentifier =
   | { type: "cpf"; value: string }
@@ -30,4 +32,10 @@ export function parseIdentifier(identifier: string): UserIdentifier {
             errorLabel: 'Invalid identifier'
         }]
     });
+}
+
+export function validateGoogleSignIn(dto: GoogleSignInDTO) {
+  if (!dto.idToken || typeof dto.idToken !== "string") {
+    throw new ValidationError([{ field: "idToken", errorLabel:"idToken is required" }]);
+  }
 }

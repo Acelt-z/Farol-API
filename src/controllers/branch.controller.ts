@@ -1,11 +1,10 @@
 import { type Request, type Response } from "express";
 import { BranchCompanyService } from "../services/BranchCompanyService.js";
-import { prisma } from "../utils/prisma.js";
 import { assertUserIdxists, getParsedData } from "../utils/utils.js";
 import { CreateBranchCompanySchema, ParentCompanyParamSchema } from "../models/branchCompany.js";
 
 
-const branchService = new BranchCompanyService(prisma);
+const branchService = new BranchCompanyService();
 
 export async function createBranchCompanyController(req: Request, res: Response) {
     assertUserIdxists(req.userId);

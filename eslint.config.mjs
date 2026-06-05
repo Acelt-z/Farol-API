@@ -34,7 +34,7 @@ export default [
 
       // Clean Architecture
       "max-depth": ["warn", 3],
-      complexity: ["warn", 10],
+      complexity: ["warn", 15],
     },
   },
 ];

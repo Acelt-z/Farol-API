@@ -25,3 +25,6 @@ export const SignUpSchema = z.object({
 });
 
 export type SignUpDTO = z.infer<typeof SignUpSchema>;
+
+export const GoogleSignInSchema = z.object({ idToken: z.string().min(1) });
+export type GoogleSignInDTO = z.infer<typeof GoogleSignInSchema>;
